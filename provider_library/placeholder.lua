@@ -7,6 +7,7 @@ local logger = require("logger")
 local util = require("util")
 
 local GenericCover = require("provider_library.generic_cover")
+local History = require("provider_library.history")
 local U = require("provider_library.util")
 
 local Placeholder = {}
@@ -219,7 +220,11 @@ function Placeholder.is_owned(path, provider_id, book_id)
         and tostring(marker.book_id) == tostring(book_id)
 end
 
-function Placeholder.remove(path)
+function Placeholder.remove(path, remove_history)
+    History.unregister(path)
+    if remove_history then
+        History.remove_canonical(path)
+    end
     if U.file_exists(path) then
         os.remove(path)
     end
@@ -245,6 +250,12 @@ function Placeholder.upsert(provider, record, settings, allow_network, plugin_pa
     local filename = U.safe_filename(display_title, "untitled")
         .. " [" .. safe_id .. "].html"
     local path = provider_dir .. "/" .. filename
+    local history_sources = {
+        record.cache_path,
+        record.book and record.book.cache_dir,
+        record.book and record.book.cached_full_book,
+        record.book and record.book.cached_file,
+    }
     local existing = settings:get_placeholder(provider.id, record.book_id)
     if existing and existing.path and existing.path ~= path
         and Placeholder.is_owned(existing.path, provider.id, record.book_id) then
@@ -254,6 +265,7 @@ function Placeholder.upsert(provider, record, settings, allow_network, plugin_pa
         and not Placeholder.is_owned(path, provider.id, record.book_id) then
         return nil, "目标路径已有其他文件"
     end
+    History.register(path, history_sources)
 
     local signature = U.signature({
         provider_id = provider.id,

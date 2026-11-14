@@ -6,6 +6,8 @@ local Font = require("ui/font")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 
+local History = require("provider_library.history")
+
 local UIPatch = {}
 
 local function mosaic_item_class()
@@ -111,6 +113,7 @@ function UIPatch.installMosaicBadge()
 end
 
 function UIPatch.install(plugin_name)
+    History.install()
     if FileChooser._provider_library_bridge_original_mandatory then
         return
     end

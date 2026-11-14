@@ -1,6 +1,7 @@
 local DocSettings = require("docsettings")
 local logger = require("logger")
 
+local History = require("provider_library.history")
 local Placeholder = require("provider_library.placeholder")
 local U = require("provider_library.util")
 
@@ -87,6 +88,14 @@ function Sync.run(context)
     end
 
     context.settings:flush()
+    History.flush()
+    local history_ok, history_error = pcall(History.reconcile)
+    if not history_ok then
+        logger.warn(
+            "provider-library-bridge: history reconcile failed",
+            tostring(history_error)
+        )
+    end
     remove_empty_legacy_directories()
     report.finished_at = os.time()
     report.scope = scope
@@ -108,7 +117,7 @@ function Sync.clear_placeholders(providers, settings)
             if path and U.file_exists(path) then
                 local owned = Placeholder.is_owned(path, provider_id, book_id)
                 if owned then
-                    Placeholder.remove(path)
+                    Placeholder.remove(path, true)
                     removed = removed + 1
                 elseif known_providers[provider_id] then
                     failed = failed + 1
@@ -118,6 +127,7 @@ function Sync.clear_placeholders(providers, settings)
         end
     end
     settings:flush()
+    History.flush()
     remove_empty_legacy_directories()
     return removed, failed
 end

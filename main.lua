@@ -394,11 +394,6 @@ function ProviderLibraryBridge:onReaderReady()
     local placeholder_path = self.ui.document.file
     local provider = Registry.by_id(self.providers, marker.provider_id)
     UIManager:nextTick(function()
-        local ok, ReadHistory = pcall(require, "readhistory")
-        if ok and placeholder_path then
-            pcall(ReadHistory.removeItemByPath, ReadHistory, placeholder_path)
-        end
-
         if not provider then
             self._opening_placeholder = nil
             UIManager:show(InfoMessage:new{
