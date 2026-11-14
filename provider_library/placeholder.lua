@@ -156,7 +156,8 @@ function Placeholder.upsert(provider, record, settings, allow_network)
     U.ensure_dir(provider_dir)
 
     local safe_id = U.safe_filename(record.book_id, "book")
-    local filename = U.safe_filename(record.title, "untitled")
+    local display_title = U.display_title(provider, record.title)
+    local filename = U.safe_filename(display_title, "untitled")
         .. " [" .. safe_id .. "].html"
     local path = provider_dir .. "/" .. filename
     local existing = settings:get_placeholder(provider.id, record.book_id)
@@ -194,7 +195,6 @@ function Placeholder.upsert(provider, record, settings, allow_network)
         return nil, "写入占位书失败"
     end
 
-    local display_title = U.display_title(provider, record.title)
     local doc_settings = DocSettings:open(path)
     doc_settings:saveSetting("doc_props", {
         title = display_title,

@@ -1,4 +1,5 @@
 local FileChooser = require("ui/widget/filechooser")
+local DocSettings = require("docsettings")
 
 local UIPatch = {}
 
@@ -13,20 +14,20 @@ function UIPatch.install(plugin_name)
         local original = FileChooser._provider_library_bridge_original_mandatory
         local text = original(chooser, item, collate)
         local ui = chooser and chooser.ui
-        local bridge = ui and ui[plugin_name]
-        if not (bridge and item and type(item.path) == "string") then
+        if not (ui and item and type(item.path) == "string") then
             return text
         end
 
-        local filename = item.path:match("([^/]+)$") or ""
-        local tag = filename:match("^%[([^%]]+)%]")
-        if not tag then
+        if item.path:sub(-5):lower() ~= ".html"
+            or not DocSettings:hasSidecarFile(item.path) then
             return text
         end
-        for _, provider in ipairs(bridge.providers or {}) do
-            if provider.tag == tag then
-                return tag .. " · " .. tostring(text or "")
-            end
+
+        local marker = DocSettings:open(item.path):readSetting(
+            "provider_library_placeholder"
+        )
+        if type(marker) == "table" and marker.tag and marker.tag ~= "" then
+            return marker.tag .. " · " .. tostring(text or "")
         end
         return text
     end
