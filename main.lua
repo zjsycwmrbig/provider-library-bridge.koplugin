@@ -8,6 +8,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 
+local BottomMessage = require("provider_library.bottom_message")
 local Registry = require("provider_library.registry")
 local Settings = require("provider_library.settings")
 local Sync = require("provider_library.sync")
@@ -114,9 +115,10 @@ function ProviderLibraryBridge:runSync(silent)
     local ui = self.ui
 
     if not silent then
-        UIManager:show(InfoMessage:new{
+        UIManager:show(BottomMessage:new{
             text = _("正在同步在线书库占位书…"),
             timeout = 1,
+            show_icon = false,
         })
         UIManager:forceRePaint()
     end
@@ -346,9 +348,10 @@ function ProviderLibraryBridge:onReaderReady()
         local provider_plugin = self.ui[provider.plugin_name]
         local prepared_book = marker.book or {}
         if type(provider.prepare) == "function" then
-            UIManager:show(InfoMessage:new{
+            UIManager:show(BottomMessage:new{
                 text = _("正在获取最新阅读进度…"),
                 timeout = 1,
+                show_icon = false,
             })
             UIManager:forceRePaint()
             local prepared, result = pcall(
