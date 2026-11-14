@@ -256,16 +256,25 @@ function ProviderLibraryBridge:addToMainMenu(menu_items)
         return
     end
 
-    menu_items.provider_library_01_sync = {
-        text = _("同步在线书库占位书"),
+    menu_items.provider_library_menu = {
+        text = _("在线书库本地书架"),
         sorting_hint = "tools",
+        sub_item_table_func = function()
+            return self:getSettingsMenuItems()
+        end,
+    }
+end
+
+function ProviderLibraryBridge:getSettingsMenuItems()
+    local items = {}
+    items[#items + 1] = {
+        text = _("立即同步"),
         callback = function()
             self:runSync(false)
         end,
     }
-    menu_items.provider_library_02_auto = {
+    items[#items + 1] = {
         text = _("定时同步"),
-        sorting_hint = "tools",
         checked_func = function()
             return self.settings:get("auto_sync_enabled", false) == true
         end,
@@ -274,28 +283,26 @@ function ProviderLibraryBridge:addToMainMenu(menu_items)
         end,
         keep_menu_open = true,
     }
-    menu_items.provider_library_03_interval = {
+    items[#items + 1] = {
         text = _("同步间隔"),
-        sorting_hint = "tools",
         sub_item_table_func = function()
             return self:getAutoSyncIntervalItems()
         end,
     }
-    menu_items.provider_library_04_status = {
+    items[#items + 1] = {
         text = string.format(
             _("上次同步：%s"),
             format_last_sync(self.settings:get("last_sync", 0))
         ),
-        sorting_hint = "tools",
         enabled = false,
     }
-    menu_items.provider_library_05_clear = {
+    items[#items + 1] = {
         text = _("清除在线书库占位书"),
-        sorting_hint = "tools",
         callback = function()
             self:confirmClearPlaceholders()
         end,
     }
+    return items
 end
 
 function ProviderLibraryBridge:onNetworkConnected()

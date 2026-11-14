@@ -6,6 +6,21 @@ local U = require("provider_library.util")
 
 local Sync = {}
 
+local LEGACY_DIRECTORIES = {
+    "/mnt/us/Books/在线书库/番茄小说",
+    "/mnt/us/Books/在线书库/微信读书",
+    "/mnt/us/Books/在线书库",
+}
+
+local function remove_empty_legacy_directories()
+    local lfs = require("libs/libkoreader-lfs")
+    for _, directory in ipairs(LEGACY_DIRECTORIES) do
+        if lfs.attributes(directory, "mode") == "directory" then
+            pcall(lfs.rmdir, directory)
+        end
+    end
+end
+
 local function provider_plugin(ui, plugin_loader, provider)
     if ui and ui[provider.plugin_name] then
         return ui[provider.plugin_name]
@@ -64,6 +79,7 @@ function Sync.run(context)
     end
 
     context.settings:flush()
+    remove_empty_legacy_directories()
     report.finished_at = os.time()
     return report
 end
@@ -93,6 +109,7 @@ function Sync.clear_placeholders(providers, settings)
         end
     end
     settings:flush()
+    remove_empty_legacy_directories()
     return removed, failed
 end
 

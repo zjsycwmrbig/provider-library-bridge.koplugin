@@ -6,7 +6,7 @@ Settings.__index = Settings
 
 local DEFAULTS = {
     version = 1,
-    target_root = "/mnt/us/Books/在线书库",
+    target_root = "/mnt/us/Books",
     auto_sync_enabled = false,
     auto_sync_interval_minutes = 1440,
     last_auto_attempt = 0,
@@ -30,6 +30,10 @@ function Settings:new()
     local store = LuaSettings:open(
         DataStorage:getSettingsDir() .. "/provider_library_bridge.lua"
     )
+    if store:readSetting("target_root") == "/mnt/us/Books/在线书库" then
+        store:saveSetting("target_root", "/mnt/us/Books")
+        store:flush()
+    end
     return setmetatable({
         store = store,
         data_dir = DataStorage:getFullDataDir() .. "/provider-library-bridge",

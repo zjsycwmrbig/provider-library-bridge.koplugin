@@ -3,6 +3,7 @@ local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
 local ltn12 = require("ltn12")
 local lfs = require("libs/libkoreader-lfs")
+local logger = require("logger")
 local util = require("util")
 
 local U = require("provider_library.util")
@@ -151,9 +152,7 @@ function Placeholder.remove(path)
 end
 
 function Placeholder.upsert(provider, record, settings, allow_network)
-    local provider_dir = settings:get("target_root", "/mnt/us/Books/在线书库")
-        .. "/" .. provider.label
-    U.ensure_dir(settings:get("target_root", "/mnt/us/Books/在线书库"))
+    local provider_dir = settings:get("target_root", "/mnt/us/Books")
     U.ensure_dir(provider_dir)
 
     local safe_id = U.safe_filename(record.book_id, "book")
@@ -215,7 +214,19 @@ function Placeholder.upsert(provider, record, settings, allow_network)
 
     local cover = ensure_cover(settings, record, allow_network)
     if cover and U.file_exists(cover) then
-        pcall(DocSettings.flushCustomCover, path, cover)
+        local ok, err = pcall(DocSettings.flushCustomCover, DocSettings, path, cover)
+        if not ok then
+            logger.warn(
+                "provider-library-bridge: custom cover failed",
+                provider.id, tostring(record.book_id), tostring(err)
+            )
+        end
+    elseif has_cover_source then
+        logger.warn(
+            "provider-library-bridge: cover unavailable",
+            provider.id, tostring(record.book_id),
+            tostring(record.cover_path or record.cover_url)
+        )
     end
 
     settings:set_placeholder(provider.id, record.book_id, {
