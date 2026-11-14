@@ -134,6 +134,7 @@ local record = {
     cached_count = 17,
     total_count = 19,
     progress_percent = 42.5,
+    progress_source = "cloud",
     last_read_title = "惨剧（一）",
     read_timestamp = 1760000000,
     cache_bytes = 11 * 1024 * 1024,
@@ -163,7 +164,8 @@ local marker = written_settings[placeholder_path].provider_library_placeholder
 assert(marker.tag == "番茄")
 assert(marker.cover_kind == "generic")
 assert(marker.cover_variant == "eclipse")
-assert(marker.marker_schema == 2)
+assert(marker.marker_schema == 3)
+assert(marker.progress_source == "cloud")
 
 -- A provider may lose its local cover while the bridge still has a valid cache.
 local original_open = io.open

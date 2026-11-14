@@ -17,7 +17,7 @@ plugins in KOReader's local library, with covers and provider badges.
 插件不会修改番茄小说或微信读书插件。点击占位书时，本插件通过各来源插件已有的
 实例接口打开对应书。
 
-当前为 **v0.5.0 公开预览版**。已完成 Kindle 安装、文件校验、Lua 测试及三款
+当前为 **v0.5.1 公开预览版**。已完成 Kindle 安装、文件校验、Lua 测试及三款
 默认封面的实机引擎渲染验证；重启后的完整书架显示、标签位置和点击跳转仍需进一步验证。
 
 ## 安装与升级
@@ -164,6 +164,11 @@ GitHub 自动生成的 Source code ZIP 会包含仓库外层目录，建议使�
 也显示 42%，达到 99.5% 后标记为完成。打开占位书时，来源插件切换到真实章节，
 保存设置钩子会避免占位 HTML 的一页进度反向覆盖来源进度。
 
+番茄在联网同步时还会调用来源插件的云端阅读进度接口，并优先使用服务端
+`read_progress`；云端不可用时才回退到本地书架快照。同步会检查
+`percent_finished` 是否真的等于占位书标记中的进度，即使其他书籍信息没有变化，
+进度字段缺失或过期也会强制修复。
+
 通用封面位于 `assets/generic-covers/`，由 `provider_library/generic_cover.lua`
 按书籍生成标题和作者。三套封面分别是“暗日”“流线”和“墨格”，会根据
 Provider 与书号稳定选择，因此同一本书不会每次同步都换封面。
@@ -252,7 +257,7 @@ Kindle 上本插件的数据位置：
 
 - [开发与测试](docs/DEVELOPMENT.md)
 - [贡献指南](CONTRIBUTING.md)
-- [v0.5.0 发布说明](docs/releases/v0.5.0.md)
+- [v0.5.1 发布说明](docs/releases/v0.5.1.md)
 - 代码和原创 SVG： [AGPL-3.0](LICENSE)
 - 内置字体：SIL OFL 1.1，见 [第三方声明](THIRD_PARTY_NOTICES.md)
 

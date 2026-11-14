@@ -62,6 +62,7 @@ function Sync.run(context)
         if plugin then
             local ok, records = pcall(provider.scan, provider, plugin, {
                 scope = scope,
+                allow_network = context.allow_network == true,
             })
             if not ok then
                 logger.warn(

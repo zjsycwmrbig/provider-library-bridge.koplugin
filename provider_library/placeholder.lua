@@ -186,7 +186,7 @@ end
 local function marker_for(provider, record, existing_marker)
     return {
         version = 1,
-        marker_schema = 2,
+        marker_schema = 3,
         provider_id = provider.id,
         provider_label = provider.label,
         tag = provider.tag,
@@ -196,6 +196,7 @@ local function marker_for(provider, record, existing_marker)
         cached_count = record.cached_count,
         total_count = record.total_count,
         progress_percent = U.progress_percent(record.progress_percent),
+        progress_source = record.progress_source,
         last_read_title = record.last_read_title,
         read_timestamp = record.read_timestamp,
         cache_bytes = record.cache_bytes,
@@ -382,7 +383,10 @@ function Placeholder.upsert(
     })
     local existing_cover = DocSettings:findCustomCoverFile(path)
     local has_cover_source = record.cover_path or record.cover_url
-    local existing_marker = sidecar_marker(path)
+    local existing_doc_settings = DocSettings:open(path)
+    local existing_marker = existing_doc_settings:readSetting(
+        "provider_library_placeholder"
+    )
     signature = signature .. "\n" .. tostring(
         existing_marker and existing_marker.last_opened_at or 0
     )
@@ -394,9 +398,19 @@ function Placeholder.upsert(
         and has_cover_source
         and existing_marker
         and existing_marker.cover_kind == "generic"
+    local expected_progress = U.progress_percent(record.progress_percent)
+    local existing_progress = existing_doc_settings:readSetting(
+        "percent_finished"
+    )
+    local progress_is_ready = expected_progress == nil
+        or (tonumber(existing_progress) ~= nil
+            and math.abs(
+                tonumber(existing_progress) * 100 - expected_progress
+            ) < 0.01)
     if existing and existing.path == path and existing.signature == signature
         and Placeholder.is_owned(path, provider.id, record.book_id)
-        and existing_marker and existing_marker.marker_schema == 2
+        and existing_marker and existing_marker.marker_schema == 3
+        and progress_is_ready
         and cover_is_ready and not retry_official_cover then
         return "unchanged"
     end
@@ -438,7 +452,7 @@ function Placeholder.upsert(
     marker.cover_kind = cover_kind
     marker.cover_variant = cover_variant
 
-    local doc_settings = DocSettings:open(path)
+    local doc_settings = existing_doc_settings
     doc_settings:saveSetting("doc_props", {
         title = display_title,
         authors = record.author or "",

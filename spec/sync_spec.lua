@@ -1,5 +1,6 @@
 local scope = "known_shelf"
 local captured_scope
+local captured_network
 
 package.preload["docsettings"] = function() return {} end
 package.preload["logger"] = function()
@@ -32,6 +33,7 @@ local provider = {
     plugin_name = "example",
     scan = function(_, _, options)
         captured_scope = options.scope
+        captured_network = options.allow_network
         return {}
     end,
 }
@@ -53,6 +55,7 @@ local context = {
 local report = Sync.run(context)
 assert(captured_scope == "known_shelf")
 assert(report.scope == "known_shelf")
+assert(captured_network == false)
 
 scope = "cached_only"
 report = Sync.run(context)

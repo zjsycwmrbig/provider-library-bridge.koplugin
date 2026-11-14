@@ -75,28 +75,42 @@ local function merge_shelf_book(book, shelf_book)
     return book
 end
 
-local function merge_cloud_progress(plugin, book)
+local function cloud_progress_map(plugin)
     local client = plugin and plugin.client
-    if not client or type(client.fetch_read_progress) ~= "function" then
-        return book
+    if not (client and type(client.fetch_read_progress) == "function") then
+        return {}
     end
-
     local ok, result = pcall(client.fetch_read_progress, client)
     if not ok or type(result) ~= "table" or type(result.data) ~= "table" then
-        return book
+        return {}
     end
-    local book_id = tostring(book.book_id or book.bookId or "")
+    local by_book = {}
     for _, item in ipairs(result.data) do
-        if tostring(item.book_id or item.bookId or "") == book_id then
-            local item_id = item.item_id or item.itemId
-            if item_id ~= nil and tostring(item_id) ~= "" then
-                book.item_id = tostring(item_id)
-                book.latest_read_item_id = tostring(item_id)
-            end
-            if item.read_timestamp ~= nil then
-                book.read_timestamp = item.read_timestamp
-            end
-            break
+        local book_id = item.book_id or item.bookId
+        if book_id ~= nil then
+            by_book[tostring(book_id)] = item
+        end
+    end
+    return by_book
+end
+
+local function merge_cloud_progress(plugin, book)
+    local progress_map = cloud_progress_map(plugin)
+    local book_id = tostring(book.book_id or book.bookId or "")
+    local item = progress_map[book_id]
+    if item then
+        local item_id = item.item_id or item.itemId
+        if item_id ~= nil and tostring(item_id) ~= "" then
+            book.item_id = tostring(item_id)
+            book.latest_read_item_id = tostring(item_id)
+        end
+        local read_progress = tonumber(item.read_progress)
+        if read_progress and read_progress >= 0 and read_progress <= 10000 then
+            book.read_progress = read_progress
+            book.progress = read_progress / 10000
+        end
+        if item.read_timestamp ~= nil then
+            book.read_timestamp = item.read_timestamp
         end
     end
     return book
@@ -134,7 +148,9 @@ local function progress_from_shelf(shelf_book)
     return progress
 end
 
-local function build_record(provider, cache_root, book_id, shelf_book, include_uncached)
+local function build_record(
+    provider, cache_root, book_id, shelf_book, include_uncached, cloud_progress
+)
     shelf_book = shelf_book or {}
     local directory = cache_root .. "/" .. tostring(book_id)
     local directory_exists = U.dir_exists(directory)
@@ -168,13 +184,32 @@ local function build_record(provider, cache_root, book_id, shelf_book, include_u
             or ""
     )
     local cover_url = shelf_book.cover
-    local progress = progress_from_shelf(shelf_book)
+    local progress
+    local progress_source
+    local cloud_read_progress = cloud_progress
+        and tonumber(cloud_progress.read_progress)
+    if cloud_read_progress
+        and cloud_read_progress >= 0 and cloud_read_progress <= 10000 then
+        progress = cloud_read_progress / 10000
+        progress_source = "cloud"
+    else
+        progress = progress_from_shelf(shelf_book)
+        progress_source = "shelf"
+    end
+    local cloud_item_id = cloud_progress
+        and (cloud_progress.item_id or cloud_progress.itemId)
+    if cloud_item_id ~= nil and tostring(cloud_item_id) ~= "" then
+        cloud_item_id = tostring(cloud_item_id)
+    end
+    local cloud_read_timestamp = cloud_progress
+        and tonumber(cloud_progress.read_timestamp)
     local book = {
         book_id = tostring(book_id),
         title = title,
         author = author,
-        item_id = shelf_book.item_id,
-        latest_read_item_id = shelf_book.latest_read_item_id,
+        item_id = cloud_item_id or shelf_book.item_id,
+        latest_read_item_id = cloud_item_id
+            or shelf_book.latest_read_item_id,
         last_chapter_item_id = shelf_book.last_chapter_item_id,
         total_chapters = tonumber(shelf_book.total_chapters) or total_count,
         progress = progress,
@@ -195,12 +230,14 @@ local function build_record(provider, cache_root, book_id, shelf_book, include_u
         cached_count = cached_count,
         total_count = total_count,
         progress_percent = U.progress_percent(progress),
+        progress_source = progress_source,
         last_read_title = U.trim(
             shelf_book.item_show_title
                 or shelf_book.last_chapter_title
                 or ""
         ),
-        read_timestamp = tonumber(shelf_book.read_timestamp),
+        read_timestamp = cloud_read_timestamp
+            or tonumber(shelf_book.read_timestamp),
         cache_path = directory_exists and directory or nil,
         cache_bytes = directory_exists and U.directory_size(directory) or 0,
         cover_url = cover_url,
@@ -218,6 +255,8 @@ function Provider:scan(plugin, options)
     local include_uncached = options.scope ~= "cached_only"
     local cache_root = plugin.settings:get_download_dir()
     local shelf, shelf_by_id = load_shelf(cache_root)
+    local cloud_progress = options.allow_network
+        and cloud_progress_map(plugin) or {}
     local records = {}
     local seen = {}
     local function append(book_id, shelf_book)
@@ -226,7 +265,8 @@ function Provider:scan(plugin, options)
             return
         end
         local record = build_record(
-            self, cache_root, book_id, shelf_book, include_uncached
+            self, cache_root, book_id, shelf_book, include_uncached,
+            cloud_progress[book_id]
         )
         if record then
             seen[book_id] = true

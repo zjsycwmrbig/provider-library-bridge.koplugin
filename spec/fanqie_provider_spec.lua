@@ -106,4 +106,32 @@ local cached = Provider:scan(plugin, { scope = "cached_only" })
 assert(#cached == 1)
 assert(cached[1].book_id == "cached")
 
+plugin.client = {
+    fetch_read_progress = function()
+        return {
+            data = {
+                {
+                    book_id = "cached",
+                    item_id = "cloud-item",
+                    read_progress = 4321,
+                    read_timestamp = 1794648000,
+                },
+            },
+        }
+    end,
+}
+local cloud = Provider:scan(plugin, {
+    scope = "cached_only",
+    allow_network = true,
+})
+assert(#cloud == 1)
+assert(cloud[1].progress_percent == 43.21)
+assert(cloud[1].progress_source == "cloud")
+assert(cloud[1].book.progress == 0.4321)
+assert(cloud[1].book.item_id == "cloud-item")
+
+local prepared = Provider:prepare(plugin, { book_id = "cached" })
+assert(prepared.progress == 0.4321)
+assert(prepared.read_timestamp == 1794648000)
+
 print("fanqie_provider_spec: ok")
