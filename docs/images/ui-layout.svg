@@ -20,14 +20,16 @@
     <text x="542" y="106" font-size="20">工具 → 在线书库本地书架</text>
     <path d="M520 126H970" stroke="#aaa"/>
     <g font-size="20">
-      <text x="550" y="176">立即同步</text>
-      <text x="550" y="239">定时同步</text>
-      <text x="550" y="302">同步间隔</text>
-      <text x="928" y="302">›</text>
-      <text x="550" y="365" fill="#666">上次同步：示例时间</text>
-      <text x="550" y="428">清除在线书库占位书</text>
+      <text x="550" y="166">立即同步</text>
+      <text x="550" y="222">同步范围：已知书架</text>
+      <text x="928" y="222">›</text>
+      <text x="550" y="278">定时同步</text>
+      <text x="550" y="334">同步间隔</text>
+      <text x="928" y="334">›</text>
+      <text x="550" y="390" fill="#666">上次同步：示例时间</text>
+      <text x="550" y="446">清除在线书库占位书</text>
     </g>
-    <g stroke="#ddd"><path d="M540 198H950"/><path d="M540 261H950"/><path d="M540 324H950"/><path d="M540 387H950"/></g>
+    <g stroke="#ddd"><path d="M540 184H950"/><path d="M540 240H950"/><path d="M540 296H950"/><path d="M540 352H950"/><path d="M540 408H950"/></g>
     <text x="550" y="540" font-size="16" fill="#666">定时同步仅在 KOReader 运行期间检查</text>
   </g>
 </svg>

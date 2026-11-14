@@ -7,6 +7,7 @@ Settings.__index = Settings
 local DEFAULTS = {
     version = 1,
     target_root = "/mnt/us/Books",
+    sync_scope = "known_shelf",
     auto_sync_enabled = false,
     auto_sync_interval_minutes = 1440,
     last_auto_attempt = 0,

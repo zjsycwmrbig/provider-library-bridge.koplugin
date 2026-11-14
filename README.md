@@ -3,10 +3,11 @@
 [![Checks](https://github.com/zjsycwmrbig/provider-library-bridge.koplugin/actions/workflows/check.yml/badge.svg)](https://github.com/zjsycwmrbig/provider-library-bridge.koplugin/actions/workflows/check.yml)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
 
-**Provider Library Bridge for KOReader** — expose books already cached by online
-reading plugins in KOReader's local library, with covers and provider badges.
+**Provider Library Bridge for KOReader** — expose books from online reading
+plugins in KOReader's local library, with covers and provider badges.
 
-把在线阅读插件已经缓存的书同步为 KOReader 本地书库中的占位书。
+把在线阅读插件的已知书架同步为 KOReader 本地书库中的占位书。默认包含尚未缓存
+章节的书，也可以切换为只同步已有本地缓存的书。
 
 当前包含两个 Provider：
 
@@ -16,12 +17,14 @@ reading plugins in KOReader's local library, with covers and provider badges.
 插件不会修改番茄小说或微信读书插件。点击占位书时，本插件通过各来源插件已有的
 实例接口打开对应书。
 
-当前为 **v0.2.1 公开预览版**。已完成 Kindle 安装、文件校验、Lua 测试及三款
+当前为 **v0.3.0 公开预览版**。已完成 Kindle 安装、文件校验、Lua 测试及三款
 默认封面的实机引擎渲染验证；重启后的完整书架显示、标签位置和点击跳转仍需进一步验证。
 
 ## 安装与升级
 
-1. 安装并启用下方兼容表中的至少一个来源插件，先在来源插件内缓存书籍章节。
+1. 安装并启用下方兼容表中的至少一个来源插件。默认同步“已知书架”，因此至少
+   打开或刷新一次来源插件书架，让插件保存本地书架快照；若选择“仅已缓存”，还需
+   在来源插件内缓存书籍章节。
 2. 从 [Releases](https://github.com/zjsycwmrbig/provider-library-bridge.koplugin/releases)
    下载名为 provider-library-bridge.koplugin-vX.Y.Z.zip 的安装包。
 3. 退出 KOReader，把压缩包中的 **provider-library-bridge.koplugin** 文件夹放入
@@ -51,8 +54,8 @@ GitHub 自动生成的 Source code ZIP 会包含仓库外层目录，建议使�
 | Kobo / Android / 桌面端 | 尚未验证；默认路径和封面渲染能力可能需要适配 |
 
 来源仓库链接用于说明适配目标；接口兼容性以实际安装版本为准。仅需安装使用的来源
-插件，不要求两个都安装。本插件不会下载或合并完整小说，也不会把仅存在于云端书架、
-尚无本地缓存章节的书同步到本地。
+插件，不要求两个都安装。占位书只保存元数据、封面和来源书号，不会下载或合并小说
+正文；尚未缓存的书会在来源阅读界面中按需获取。
 
 ## 默认封面预览
 
@@ -67,8 +70,8 @@ GitHub 自动生成的 Source code ZIP 会包含仓库外层目录，建议使�
 
 ## 功能
 
-- 扫描在线阅读插件的已缓存书籍；
-- 为每本有缓存章节的书生成很小的 HTML 占位书；
+- 可同步来源插件已知书架中的全部书，也可切换为只同步已缓存书籍；
+- 为缓存和未缓存书生成很小的 HTML 占位书；
 - 把来源标签保存在占位书 sidecar 中，不污染书名和封面；
 - 将来源名称写入 KOReader 的系列和关键词元数据；
 - 优先同步来源已有的封面，失败时从三套内置纯 SVG 封面中选择一套；
@@ -108,12 +111,28 @@ GitHub 自动生成的 Source code ZIP 会包含仓库外层目录，建议使�
 二级菜单包含：
 
 - 立即同步
+- 同步范围
 - 定时同步
 - 同步间隔
 - 上次同步
 - 清除在线书库占位书
 
 定时同步仅在 KOReader 运行期间生效，不在系统后台常驻。
+
+## 同步范围
+
+默认范围是 **已知书架（含未缓存）**：
+
+- 番茄读取来源插件保存的 `shelf_cache.lua`；此外仍会保留已有章节缓存的本地书。
+- 微信读书优先读取来源插件 `library_db` 中的书架快照，并合并本地缓存记录。
+- 已有官方封面会继续复用；未缓存书也会尝试获取书架提供的封面。
+- 点击未缓存书时，番茄可联网打开目录；微信读书会先显示书籍详情，供下载或开始阅读。
+
+“仅已缓存”范围沿用早期行为，只同步至少有一个本地缓存章节或完整文件的书。
+
+同步本身不会为了更新书目而额外请求来源网络；请先在来源插件中刷新一次书架。
+切换为更窄的范围不会自动删除之前已生成的占位书，需要时可先执行“清除在线书库占位书”
+再重新同步。
 
 ## 封面与显示
 
@@ -196,7 +215,7 @@ Kindle 上本插件的数据位置：
 ## 常见问题
 
 - **菜单没有出现：** 检查文件夹层级、插件是否启用，然后重启 KOReader。菜单在文件管理器中显示。
-- **同步为零：** 先确认来源插件已启用，且书籍确实已有本地缓存章节。
+- **同步为零：** 先确认来源插件已启用，并在来源插件中打开或刷新一次书架；若使用“仅已缓存”，还要确认书籍已有本地缓存。
 - **封面未变化：** 升级后重启并立即同步，再刷新文件列表；纯文字模式不会显示封面。
 - **打开后章节过旧：** 番茄会尝试读取最新本地和云端进度；网络失败时只能使用已有数据。
 - **详情数据为空：** 来源插件未提供的字段显示暂无数据，不会从其他账户补取统计。
@@ -209,7 +228,7 @@ Kindle 上本插件的数据位置：
 
 - [开发与测试](docs/DEVELOPMENT.md)
 - [贡献指南](CONTRIBUTING.md)
-- [v0.2.1 发布说明](docs/releases/v0.2.1.md)
+- [v0.3.0 发布说明](docs/releases/v0.3.0.md)
 - 代码和原创 SVG： [AGPL-3.0](LICENSE)
 - 内置字体：SIL OFL 1.1，见 [第三方声明](THIRD_PARTY_NOTICES.md)
 

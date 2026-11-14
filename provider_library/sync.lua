@@ -39,12 +39,19 @@ function Sync.run(context)
         started_at = os.time(),
     }
 
+    local scope = context.settings:get("sync_scope", "known_shelf")
+    if scope ~= "cached_only" then
+        scope = "known_shelf"
+    end
+
     for _, provider in ipairs(context.providers or {}) do
         local plugin = provider_plugin(
             context.ui, context.plugin_loader, provider
         )
         if plugin then
-            local ok, records = pcall(provider.scan, provider, plugin)
+            local ok, records = pcall(provider.scan, provider, plugin, {
+                scope = scope,
+            })
             if not ok then
                 logger.warn(
                     "provider-library-bridge: scan failed",
@@ -82,6 +89,7 @@ function Sync.run(context)
     context.settings:flush()
     remove_empty_legacy_directories()
     report.finished_at = os.time()
+    report.scope = scope
     return report
 end
 

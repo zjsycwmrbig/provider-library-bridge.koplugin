@@ -10,7 +10,8 @@
     ./scripts/package.sh
 
 每个 spec 使用独立 Lua 进程。测试会模拟 KOReader 模块，覆盖书名清洗、模板资源
-查找、封面输出接口、详情卡片及离线官方封面缓存。不能替代设备 UI 验证。
+查找、Provider 同步范围、封面输出接口、详情卡片及离线官方封面缓存。
+不能替代设备 UI 验证。
 
 package.sh 固定输出目录名 provider-library-bridge.koplugin，避免 clone 到不同
 名称目录后产生 KOReader 无法识别的安装包。dist/ 是生成文件，不提交到源码。
@@ -28,8 +29,12 @@ scripts/verify_device_covers.lua 在设备 KOReader 目录运行：
 ## Provider 接口
 
 Provider 位于 provider_library/providers，由 registry 动态发现。
-必须提供 id、label、tag、plugin_name、scan(self, instance)、open(self, instance, book)。
+必须提供 id、label、tag、plugin_name、scan(self, instance, options)、
+open(self, instance, book)。
 可提供 prepare(self, instance, book) 在打开前更新进度。
+
+options.scope 为 known_shelf 或 cached_only。known_shelf 应合并来源插件的已知
+书架和已有本地缓存；cached_only 只返回已有缓存的书。
 
 scan 返回书目数组，包含 book_id、title、author、缓存章节数、总章节数、cover_url、
 cover_path、book 等字段。book 是传递给来源插件的参数；不要将账号或 Token 放入其中。
@@ -40,7 +45,7 @@ progress_percent 接受百分数或 0～1 比例，但应保持来源侧单位�
 1. 更新 _meta.lua 中的版本，并新增 docs/releases/vX.Y.Z.md。
 2. 运行检查、打包和相关实机验收。注明已测和未测范围。
 3. 提交所有改动；本仓库维护约定的提交信息以 [ai] 开头。
-4. 推送 main 后创建标签，例如 git tag v0.2.1，再 git push origin v0.2.1。
+4. 推送 main 后创建标签，例如 git tag v0.3.0，再 git push origin v0.3.0。
 5. Release 工作流验证标签与版本一致，自动创建预发布版并附 ZIP、SHA256SUMS。
 6. 充分实机验证后，在 GitHub 编辑 Release，取消 prerelease 标记。
 

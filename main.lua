@@ -231,6 +231,54 @@ function ProviderLibraryBridge:setAutoSyncInterval(minutes)
     })
 end
 
+function ProviderLibraryBridge:getSyncScopeLabel()
+    local scope = self.settings:get("sync_scope", "known_shelf")
+    return scope == "cached_only" and _("仅已缓存") or _("已知书架（含未缓存）")
+end
+
+function ProviderLibraryBridge:setSyncScope(scope)
+    if scope ~= "cached_only" then
+        scope = "known_shelf"
+    end
+    self.settings:set("sync_scope", scope)
+    self.settings:flush()
+    UIManager:show(InfoMessage:new{
+        text = string.format(
+            _("同步范围已设为“%s”，立即同步后生效。"),
+            self:getSyncScopeLabel()
+        ),
+        timeout = 3,
+    })
+end
+
+function ProviderLibraryBridge:getSyncScopeItems()
+    local options = {
+        {
+            value = "known_shelf",
+            label = _("已知书架（含未缓存）"),
+        },
+        {
+            value = "cached_only",
+            label = _("仅已缓存"),
+        },
+    }
+    local items = {}
+    for _, option in ipairs(options) do
+        items[#items + 1] = {
+            text = option.label,
+            checked_func = function()
+                return self.settings:get("sync_scope", "known_shelf")
+                    == option.value
+            end,
+            callback = function()
+                self:setSyncScope(option.value)
+            end,
+            keep_menu_open = true,
+        }
+    end
+    return items
+end
+
 function ProviderLibraryBridge:getAutoSyncIntervalItems()
     local presets = {
         { 15, _("15 分钟") },
@@ -276,6 +324,14 @@ function ProviderLibraryBridge:getSettingsMenuItems()
         text = _("立即同步"),
         callback = function()
             self:runSync(false)
+        end,
+    }
+    items[#items + 1] = {
+        text_func = function()
+            return string.format(_("同步范围：%s"), self:getSyncScopeLabel())
+        end,
+        sub_item_table_func = function()
+            return self:getSyncScopeItems()
         end,
     }
     items[#items + 1] = {
