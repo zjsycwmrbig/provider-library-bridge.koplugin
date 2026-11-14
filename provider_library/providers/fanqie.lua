@@ -52,6 +52,69 @@ local function first_existing_cover(cache_root, book_id)
     end
 end
 
+local function merge_shelf_book(book, shelf_book)
+    if type(shelf_book) ~= "table" then
+        return book
+    end
+    for _, key in ipairs({
+        "item_id",
+        "latest_read_item_id",
+        "last_chapter_item_id",
+        "read_timestamp",
+        "read_chapters",
+        "total_chapters",
+        "progress",
+    }) do
+        if shelf_book[key] ~= nil then
+            book[key] = shelf_book[key]
+        end
+    end
+    return book
+end
+
+local function merge_cloud_progress(plugin, book)
+    local client = plugin and plugin.client
+    if not client or type(client.fetch_read_progress) ~= "function" then
+        return book
+    end
+
+    local ok, result = pcall(client.fetch_read_progress, client)
+    if not ok or type(result) ~= "table" or type(result.data) ~= "table" then
+        return book
+    end
+    local book_id = tostring(book.book_id or book.bookId or "")
+    for _, item in ipairs(result.data) do
+        if tostring(item.book_id or item.bookId or "") == book_id then
+            local item_id = item.item_id or item.itemId
+            if item_id ~= nil and tostring(item_id) ~= "" then
+                book.item_id = tostring(item_id)
+                book.latest_read_item_id = tostring(item_id)
+            end
+            if item.read_timestamp ~= nil then
+                book.read_timestamp = item.read_timestamp
+            end
+            break
+        end
+    end
+    return book
+end
+
+function Provider:prepare(plugin, book)
+    if not (plugin and plugin.settings and type(book) == "table") then
+        return book
+    end
+    local book_id = tostring(book.book_id or book.bookId or "")
+    if book_id == "" then
+        return book
+    end
+
+    local cache_root = plugin.settings:get_download_dir()
+    local shelf_book = shelf_index(cache_root)[book_id]
+    merge_shelf_book(book, shelf_book)
+    merge_cloud_progress(plugin, book)
+    return book
+end
+
 function Provider:scan(plugin)
     if not (plugin and plugin.settings and plugin.settings.get_download_dir) then
         return {}

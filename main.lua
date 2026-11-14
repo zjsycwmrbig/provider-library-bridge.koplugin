@@ -344,8 +344,22 @@ function ProviderLibraryBridge:onReaderReady()
         end
 
         local provider_plugin = self.ui[provider.plugin_name]
+        local prepared_book = marker.book or {}
+        if type(provider.prepare) == "function" then
+            UIManager:show(InfoMessage:new{
+                text = _("正在获取最新阅读进度…"),
+                timeout = 1,
+            })
+            UIManager:forceRePaint()
+            local prepared, result = pcall(
+                provider.prepare, provider, provider_plugin, prepared_book
+            )
+            if prepared and type(result) == "table" then
+                prepared_book = result
+            end
+        end
         local opened, err = provider:open(
-            provider_plugin, marker.book or {}
+            provider_plugin, prepared_book
         )
         self._opening_placeholder = nil
         if opened == false then

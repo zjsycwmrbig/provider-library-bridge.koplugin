@@ -95,3 +95,15 @@ return {
 ```
 
 `scan()` 返回书目数组；`open()` 调用来源插件已有接口。
+
+Provider 还可以实现可选的进度刷新接口：
+
+```lua
+prepare = function(self, plugin_instance, book)
+    ...
+    return book
+end
+```
+
+桥接插件会在打开占位书前调用 `prepare()`。番茄 Provider 使用它重新读取书架
+缓存和云端阅读进度，避免落在同步占位书时保存的旧章节。
