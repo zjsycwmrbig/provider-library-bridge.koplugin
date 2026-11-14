@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200"
      viewBox="0 0 900 1200">
-  <title>远山来信</title>
+  <title>{{TITLE}}</title>
   <rect width="900" height="1200" fill="#3d4441"/>
   <g fill="none" stroke-linecap="round">
     <path d="M-110 300C80 120 280 420 474 252S800 40 1030 262"
@@ -19,11 +19,11 @@
   <path d="M716 150V1010" stroke="#d8dad3" stroke-width="1.5" opacity=".16"/>
   <text x="58" y="66" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif" font-size="17"
         letter-spacing="4" fill="#d3d5ce">ONLINE LIBRARY</text>
-  <text x="450" y="786" text-anchor="middle" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif" font-size="84" font-weight="600" fill="#f5f2e9">远山来信</text>
+  {{TITLE_MARKUP}}
   
   <line x1="138" y1="1042" x2="762" y2="1042" stroke="#c2c5be" stroke-width="2"/>
   <text x="450" y="1090" text-anchor="middle" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif"
-        font-size="34" fill="#eeece4">沈原</text>
+        font-size="34" fill="#eeece4">{{AUTHOR}}</text>
   <text x="450" y="1144" text-anchor="middle" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif"
         font-size="17" letter-spacing="4" fill="#c2c5be">KOREADER · ONLINE LIBRARY</text>
 

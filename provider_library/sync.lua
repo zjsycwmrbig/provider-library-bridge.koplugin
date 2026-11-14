@@ -58,7 +58,8 @@ function Sync.run(context)
                         provider,
                         record,
                         context.settings,
-                        context.allow_network
+                        context.allow_network,
+                        context.plugin_path
                     )
                     if synced == "created" then
                         report.created = report.created + 1

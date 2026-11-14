@@ -59,7 +59,10 @@ def common_footer(author, ink, muted):
 """
 
 
-def eclipse_svg(title, author):
+def eclipse_svg(title, author, title_content=None):
+    title_content = title_content or title_markup(
+        title, 450, 774, 104, 84, "#f5f2e8"
+    )
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="{WIDTH}" height="{HEIGHT}"
      viewBox="0 0 {WIDTH} {HEIGHT}">
@@ -84,13 +87,16 @@ def eclipse_svg(title, author):
   <path d="M56 690H844" stroke="#d9d6cb" stroke-width="3" opacity=".8"/>
   <text x="58" y="66" font-family="{FONT_STACK}" font-size="17"
         letter-spacing="4" fill="#c3c3bc">ONLINE LIBRARY</text>
-  {title_markup(title, 450, 774, 104, 84, "#f5f2e8")}
+  {title_content}
   {common_footer(author, "#eceae1", "#b7b8b1")}
 </svg>
 """
 
 
-def current_svg(title, author):
+def current_svg(title, author, title_content=None):
+    title_content = title_content or title_markup(
+        title, 450, 786, 104, 84, "#f5f2e9"
+    )
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="{WIDTH}" height="{HEIGHT}"
      viewBox="0 0 {WIDTH} {HEIGHT}">
@@ -112,13 +118,16 @@ def current_svg(title, author):
   <path d="M716 150V1010" stroke="#d8dad3" stroke-width="1.5" opacity=".16"/>
   <text x="58" y="66" font-family="{FONT_STACK}" font-size="17"
         letter-spacing="4" fill="#d3d5ce">ONLINE LIBRARY</text>
-  {title_markup(title, 450, 786, 104, 84, "#f5f2e9")}
+  {title_content}
   {common_footer(author, "#eeece4", "#c2c5be")}
 </svg>
 """
 
 
-def lattice_svg(title, author):
+def lattice_svg(title, author, title_content=None):
+    title_content = title_content or title_markup(
+        title, 450, 836, 104, 76, "#f5f2e9"
+    )
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="{WIDTH}" height="{HEIGHT}"
      viewBox="0 0 {WIDTH} {HEIGHT}">
@@ -148,7 +157,7 @@ def lattice_svg(title, author):
   </g>
   <text x="58" y="66" font-family="{FONT_STACK}" font-size="17"
         letter-spacing="4" fill="#cfd1ca">ONLINE LIBRARY</text>
-  {title_markup(title, 450, 786, 104, 84, "#f5f2e9")}
+  {title_content}
   {common_footer(author, "#eeece4", "#bcc0ba")}
 </svg>
 """
@@ -271,10 +280,19 @@ def main():
     for sample in samples:
         svg_path = asset_dir / sample["filename"]
         svg_path.write_text(
+            STYLES[sample["style"]](
+                "{{TITLE}}",
+                "{{AUTHOR}}",
+                title_content="{{TITLE_MARKUP}}",
+            ),
+            encoding="utf-8",
+        )
+        sample_svg = preview_dir / sample["filename"]
+        sample_svg.write_text(
             STYLES[sample["style"]](sample["title"], sample["author"]),
             encoding="utf-8",
         )
-        sample["preview"] = render_preview(svg_path, preview_dir)
+        sample["preview"] = render_preview(sample_svg, preview_dir)
 
     contact_sheet = preview_dir / "00-svg-cover-sheet.png"
     make_contact_sheet(samples, Path(args.font), contact_sheet)

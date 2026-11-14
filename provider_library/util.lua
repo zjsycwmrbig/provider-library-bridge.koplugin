@@ -78,12 +78,80 @@ function U.clean_title(value)
         local codepoint = utf8_codepoint(character)
         if is_whitespace(codepoint) then
             cleaned[#cleaned + 1] = " "
-        elseif not is_punctuation_or_symbol(codepoint) then
+        elseif is_punctuation_or_symbol(codepoint) then
+            cleaned[#cleaned + 1] = " "
+        else
             cleaned[#cleaned + 1] = character
         end
     end
     local title = table.concat(cleaned):gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
     return title ~= "" and title or "无题"
+end
+
+function U.html_escape(value)
+    local escaped = tostring(value or "")
+        :gsub("&", "&amp;")
+        :gsub("<", "&lt;")
+        :gsub(">", "&gt;")
+        :gsub('"', "&quot;")
+        :gsub("'", "&#39;")
+    return escaped
+end
+
+function U.format_bytes(value)
+    local bytes = math.max(0, tonumber(value) or 0)
+    if bytes >= 1024 * 1024 * 1024 then
+        return string.format("%.1f GB", bytes / (1024 * 1024 * 1024))
+    elseif bytes >= 1024 * 1024 then
+        return string.format("%.1f MB", bytes / (1024 * 1024))
+    elseif bytes >= 1024 then
+        return string.format("%.0f KB", bytes / 1024)
+    end
+    return string.format("%d B", bytes)
+end
+
+function U.format_time(value, fallback)
+    local timestamp = tonumber(value) or 0
+    if timestamp <= 0 then
+        return fallback or "暂无"
+    end
+    return os.date("%Y-%m-%d %H:%M", timestamp)
+end
+
+function U.progress_percent(value)
+    local progress = tonumber(value)
+    if not progress or progress < 0 then
+        return nil
+    end
+    if progress <= 1 then
+        progress = progress * 100
+    end
+    return math.max(0, math.min(100, progress))
+end
+
+function U.directory_size(path)
+    local total = 0
+    local function visit(directory)
+        local ok, iter, dir_obj = pcall(lfs.dir, directory)
+        if not ok or type(iter) ~= "function" then
+            return
+        end
+        for entry in iter, dir_obj do
+            if entry ~= "." and entry ~= ".." then
+                local child = directory .. "/" .. entry
+                local attributes = lfs.attributes(child)
+                if attributes and attributes.mode == "file" then
+                    total = total + (tonumber(attributes.size) or 0)
+                elseif attributes and attributes.mode == "directory" then
+                    visit(child)
+                end
+            end
+        end
+    end
+    if U.dir_exists(path) then
+        visit(path)
+    end
+    return total
 end
 
 function U.file_exists(path)
@@ -144,6 +212,10 @@ function U.signature(record)
         tostring(record.author or ""),
         tostring(record.cached_count or 0),
         tostring(record.total_count or 0),
+        tostring(record.progress_percent or ""),
+        tostring(record.last_read_title or ""),
+        tostring(record.read_timestamp or 0),
+        tostring(record.cache_bytes or 0),
         tostring(record.cover_url or ""),
         tostring(record.provider_id or ""),
     }, "\n")

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200"
      viewBox="0 0 900 1200">
-  <title>长夜将尽</title>
+  <title>{{TITLE}}</title>
   <rect width="900" height="1200" fill="#1d201f"/>
   <g fill="none" stroke="#b9b8b0">
     <circle cx="704" cy="274" r="166" fill="#d0cab8" stroke="none"/>
@@ -22,11 +22,11 @@
   <path d="M56 690H844" stroke="#d9d6cb" stroke-width="3" opacity=".8"/>
   <text x="58" y="66" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif" font-size="17"
         letter-spacing="4" fill="#c3c3bc">ONLINE LIBRARY</text>
-  <text x="450" y="774" text-anchor="middle" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif" font-size="84" font-weight="600" fill="#f5f2e8">长夜将尽</text>
+  {{TITLE_MARKUP}}
   
   <line x1="138" y1="1042" x2="762" y2="1042" stroke="#b7b8b1" stroke-width="2"/>
   <text x="450" y="1090" text-anchor="middle" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif"
-        font-size="34" fill="#eceae1">林舟</text>
+        font-size="34" fill="#eceae1">{{AUTHOR}}</text>
   <text x="450" y="1144" text-anchor="middle" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif"
         font-size="17" letter-spacing="4" fill="#b7b8b1">KOREADER · ONLINE LIBRARY</text>
 

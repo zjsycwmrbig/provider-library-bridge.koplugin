@@ -64,6 +64,9 @@ local function merge_shelf_book(book, shelf_book)
         "read_chapters",
         "total_chapters",
         "progress",
+        "read_progress",
+        "item_show_title",
+        "last_chapter_title",
     }) do
         if shelf_book[key] ~= nil then
             book[key] = shelf_book[key]
@@ -149,6 +152,17 @@ function Provider:scan(plugin)
                         meta.author or shelf_book.author or ""
                     )
                     local cover_url = shelf_book.cover
+                    local progress = tonumber(shelf_book.progress)
+                    if not progress and tonumber(shelf_book.read_progress) then
+                        progress = tonumber(shelf_book.read_progress) / 10000
+                    end
+                    if not progress
+                        and tonumber(shelf_book.read_chapters)
+                        and tonumber(shelf_book.total_chapters)
+                        and tonumber(shelf_book.total_chapters) > 0 then
+                        progress = tonumber(shelf_book.read_chapters)
+                            / tonumber(shelf_book.total_chapters)
+                    end
                     local book = {
                         book_id = entry,
                         title = title,
@@ -157,6 +171,7 @@ function Provider:scan(plugin)
                         latest_read_item_id = shelf_book.latest_read_item_id,
                         last_chapter_item_id = shelf_book.last_chapter_item_id,
                         total_chapters = tonumber(shelf_book.total_chapters) or total_count,
+                        progress = progress,
                         cover = cover_url,
                     }
                     records[#records + 1] = {
@@ -167,6 +182,15 @@ function Provider:scan(plugin)
                         description = shelf_book.abstract or shelf_book.desc or "",
                         cached_count = cached_count,
                         total_count = total_count,
+                        progress_percent = U.progress_percent(progress),
+                        last_read_title = U.trim(
+                            shelf_book.item_show_title
+                                or shelf_book.last_chapter_title
+                                or ""
+                        ),
+                        read_timestamp = tonumber(shelf_book.read_timestamp),
+                        cache_path = directory,
+                        cache_bytes = U.directory_size(directory),
                         cover_url = cover_url,
                         cover_path = first_existing_cover(cache_root, entry),
                         book = book,

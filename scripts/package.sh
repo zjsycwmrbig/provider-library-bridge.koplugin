@@ -16,6 +16,7 @@ cp "$repo_dir/_meta.lua" "$stage/$name/"
 cp "$repo_dir/main.lua" "$stage/$name/"
 cp "$repo_dir/README.md" "$stage/$name/"
 cp -R "$repo_dir/provider_library" "$stage/$name/"
+cp -R "$repo_dir/assets" "$stage/$name/"
 
 if [ -f "$repo_dir/LICENSE" ]; then
     cp "$repo_dir/LICENSE" "$stage/$name/"

@@ -13,6 +13,7 @@ local Registry = require("provider_library.registry")
 local Settings = require("provider_library.settings")
 local Sync = require("provider_library.sync")
 local UIPatch = require("provider_library.ui_patch")
+local U = require("provider_library.util")
 
 local PLUGIN_NAME = "provider-library-bridge"
 local AUTO_CHECK_INTERVAL = 60
@@ -130,6 +131,7 @@ function ProviderLibraryBridge:runSync(silent)
             providers = providers,
             settings = settings,
             allow_network = allow_network,
+            plugin_path = self.path,
         }
     end)
     auto_sync_running = false
@@ -159,12 +161,13 @@ function ProviderLibraryBridge:runSync(silent)
     UIManager:broadcastEvent(Event:new("BookMetadataChanged"))
 
     if not silent or report.failed > 0 then
-        UIManager:show(InfoMessage:new{
+        UIManager:show(BottomMessage:new{
             text = string.format(
                 _("同步完成\n新建 %d，更新 %d，未变化 %d，失败 %d"),
                 report.created, report.updated, report.unchanged, report.failed
             ),
             timeout = 4,
+            show_icon = false,
         })
     end
 end
@@ -328,6 +331,9 @@ function ProviderLibraryBridge:onReaderReady()
         return
     end
     self._opening_placeholder = true
+    marker.last_opened_at = os.time()
+    self.ui.doc_settings:saveSetting("provider_library_placeholder", marker)
+    self.ui.doc_settings:flush()
 
     local placeholder_path = self.ui.document.file
     local provider = Registry.by_id(self.providers, marker.provider_id)
@@ -359,6 +365,18 @@ function ProviderLibraryBridge:onReaderReady()
             )
             if prepared and type(result) == "table" then
                 prepared_book = result
+                marker.progress_percent = U.progress_percent(
+                    prepared_book.progress
+                )
+                marker.last_read_title = U.trim(
+                    prepared_book.item_show_title
+                        or prepared_book.last_chapter_title
+                        or marker.last_read_title
+                )
+                self.ui.doc_settings:saveSetting(
+                    "provider_library_placeholder", marker
+                )
+                self.ui.doc_settings:flush()
             end
         end
         local opened, err = provider:open(

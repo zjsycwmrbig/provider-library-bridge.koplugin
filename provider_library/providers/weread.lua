@@ -61,6 +61,7 @@ function Provider:scan(plugin)
         local book_id = tostring(raw_id)
         local directory = stored_book.cache_dir or (cache_root .. "/" .. book_id)
         local metadata = decode_json(directory .. "/metadata.json") or {}
+        local reading_state = decode_json(directory .. "/reading_state.json") or {}
         local catalog = decode_json(directory .. "/catalog.json") or {}
         local chapters = type(catalog.chapters) == "table" and catalog.chapters or {}
 
@@ -73,6 +74,14 @@ function Provider:scan(plugin)
             local title = U.trim(metadata.title or ("微信读书 " .. book_id))
             local author = U.trim(metadata.author or "")
             local cover_url = metadata.cover
+            local progress = tonumber(
+                reading_state.progress
+                    or reading_state.percent
+                    or reading_state.bookProgress
+            )
+            if progress and progress > 100 and progress <= 10000 then
+                progress = progress / 100
+            end
             local local_cover = get_local_cover(plugin, {
                 book_id = book_id,
                 cover = cover_url,
@@ -95,6 +104,19 @@ function Provider:scan(plugin)
                 description = metadata.intro or "",
                 cached_count = cached_count,
                 total_count = #chapters > 0 and #chapters or cached_count,
+                progress_percent = U.progress_percent(progress),
+                last_read_title = U.trim(
+                    reading_state.chapterTitle
+                        or reading_state.chapter_title
+                        or reading_state.title
+                        or ""
+                ),
+                read_timestamp = tonumber(
+                    reading_state.readUpdateTime
+                        or reading_state.updateTime
+                ),
+                cache_path = directory,
+                cache_bytes = U.directory_size(directory),
                 cover_url = cover_url,
                 cover_path = local_cover,
                 book = book,
