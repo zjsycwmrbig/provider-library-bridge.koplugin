@@ -1,0 +1,26 @@
+name: Checks
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Lua 5.1 and LuaJIT
+        run: sudo apt-get update && sudo apt-get install -y lua5.1 luajit
+      - name: Check Lua 5.1
+        run: LUA_BIN=lua5.1 bash scripts/check.sh
+      - name: Check LuaJIT
+        run: LUA_BIN=luajit bash scripts/check.sh
+      - name: Check release archive
+        run: |
+          bash scripts/package.sh
+          unzip -t dist/*.zip

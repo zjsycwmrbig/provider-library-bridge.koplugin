@@ -1,0 +1,31 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install LuaJIT
+        run: sudo apt-get update && sudo apt-get install -y luajit
+      - name: Verify and package
+        run: |
+          bash scripts/check.sh
+          version=$(sed -n 's/.*version = "\([^"]*\)".*/\1/p' _meta.lua | head -n1)
+          test "$GITHUB_REF_NAME" = "v$version"
+          test -s "docs/releases/$GITHUB_REF_NAME.md"
+          bash scripts/package.sh
+          cd dist
+          sha256sum *.zip > SHA256SUMS
+      - name: Publish preview release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.zip dist/SHA256SUMS --verify-tag --target "$GITHUB_SHA" --title "$GITHUB_REF_NAME" --notes-file "docs/releases/$GITHUB_REF_NAME.md" --prerelease

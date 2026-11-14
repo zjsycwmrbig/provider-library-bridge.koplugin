@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_dir="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-name="$(basename "$repo_dir")"
+name="provider-library-bridge.koplugin"
 version="${VERSION:-$(sed -n 's/.*version = "\([^"]*\)".*/\1/p' "$repo_dir/_meta.lua" | head -n1)}"
 archive="$repo_dir/dist/${name}-v${version}.zip"
 
@@ -15,6 +15,7 @@ mkdir -p "$stage/$name"
 cp "$repo_dir/_meta.lua" "$stage/$name/"
 cp "$repo_dir/main.lua" "$stage/$name/"
 cp "$repo_dir/README.md" "$stage/$name/"
+cp "$repo_dir/THIRD_PARTY_NOTICES.md" "$stage/$name/"
 cp -R "$repo_dir/provider_library" "$stage/$name/"
 cp -R "$repo_dir/assets" "$stage/$name/"
 
