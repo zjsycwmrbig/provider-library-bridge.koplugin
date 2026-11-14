@@ -154,10 +154,12 @@ assert(captured_html:match("17 / 19"))
 assert(captured_html:match("11.0 MB"))
 assert(captured_cover_svg == "<svg/>")
 assert(written_settings.cover.cover == "/tmp/generic.svg")
-
-local marker = written_settings[
+local placeholder_path =
     "/mnt/us/Books/黑死馆杀人事件 [7011072854741486628].html"
-].provider_library_placeholder
+assert(written_settings[placeholder_path].percent_finished == 0.425)
+assert(written_settings[placeholder_path].summary.status == "reading")
+
+local marker = written_settings[placeholder_path].provider_library_placeholder
 assert(marker.tag == "番茄")
 assert(marker.cover_kind == "generic")
 assert(marker.cover_variant == "eclipse")
@@ -184,12 +186,8 @@ end
 result, err = Placeholder.upsert(provider, record, settings, false, ".")
 assert(result == "created", err)
 assert(written_settings.cover.cover == cached_cover)
-assert(marker ~= written_settings[
-    "/mnt/us/Books/黑死馆杀人事件 [7011072854741486628].html"
-].provider_library_placeholder)
-assert(written_settings[
-    "/mnt/us/Books/黑死馆杀人事件 [7011072854741486628].html"
-].provider_library_placeholder.cover_kind == "official")
+assert(marker ~= written_settings[placeholder_path].provider_library_placeholder)
+assert(written_settings[placeholder_path].provider_library_placeholder.cover_kind == "official")
 io.open = original_open
 lfs.attributes = original_attributes
 

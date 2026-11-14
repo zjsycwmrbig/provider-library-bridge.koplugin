@@ -44,6 +44,16 @@ function Sync.run(context)
     if scope ~= "cached_only" then
         scope = "known_shelf"
     end
+    local placeholder_index = {}
+    local index_ok, built_index = pcall(Placeholder.build_index, context.settings)
+    if index_ok and type(built_index) == "table" then
+        placeholder_index = built_index
+    else
+        logger.warn(
+            "provider-library-bridge: placeholder index failed",
+            tostring(built_index)
+        )
+    end
 
     for _, provider in ipairs(context.providers or {}) do
         local plugin = provider_plugin(
@@ -67,7 +77,8 @@ function Sync.run(context)
                         record,
                         context.settings,
                         context.allow_network,
-                        context.plugin_path
+                        context.plugin_path,
+                        placeholder_index
                     )
                     if synced == "created" then
                         report.created = report.created + 1

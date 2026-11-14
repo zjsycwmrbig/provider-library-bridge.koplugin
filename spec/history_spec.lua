@@ -1,4 +1,5 @@
 local placeholder = "/mnt/us/Books/示例书 [42].html"
+local moved_placeholder = "/mnt/us/Books/已读/示例书 [42].html"
 local source_dir = "/mnt/us/koreader/example/cache/42"
 local source_file = source_dir .. "/chapter_1.html"
 local normal_file = "/mnt/us/Books/普通书.epub"
@@ -30,7 +31,7 @@ G_reader_settings = {
 package.preload["libs/libkoreader-lfs"] = function()
     return {
         attributes = function(path, field)
-            if path == placeholder then
+            if path == placeholder or path == moved_placeholder then
                 return field == "mode" and "file" or { mode = "file" }
             end
         end,
@@ -105,11 +106,21 @@ for _, item in ipairs(ReadHistory.hist) do
 end
 assert(placeholders == 1)
 
-History.unregister(placeholder)
-assert(History.canonical_for(source_file) == nil)
-History.remove_canonical(placeholder)
+History.move(placeholder, moved_placeholder)
+assert(History.canonical_for(source_file) == moved_placeholder)
+local moved_history = 0
 for _, item in ipairs(ReadHistory.hist) do
-    assert(item.file ~= placeholder)
+    if item.file == moved_placeholder then
+        moved_history = moved_history + 1
+    end
+end
+assert(moved_history == 1)
+
+History.unregister(moved_placeholder)
+assert(History.canonical_for(source_file) == nil)
+History.remove_canonical(moved_placeholder)
+for _, item in ipairs(ReadHistory.hist) do
+    assert(item.file ~= moved_placeholder)
 end
 
 print("history_spec: ok")

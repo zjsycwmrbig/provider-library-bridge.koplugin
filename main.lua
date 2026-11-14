@@ -424,6 +424,14 @@ function ProviderLibraryBridge:onReaderReady()
                         or prepared_book.last_chapter_title
                         or marker.last_read_title
                 )
+                local progress_percent = U.progress_percent(
+                    prepared_book.progress
+                )
+                if progress_percent ~= nil then
+                    self.ui.doc_settings:saveSetting(
+                        "percent_finished", progress_percent / 100
+                    )
+                end
                 self.ui.doc_settings:saveSetting(
                     "provider_library_placeholder", marker
                 )

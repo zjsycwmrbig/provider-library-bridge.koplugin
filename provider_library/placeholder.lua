@@ -210,6 +210,102 @@ local function sidecar_marker(path)
     return doc_settings:readSetting("provider_library_placeholder")
 end
 
+local function add_index_candidate(index, path, marker, attributes)
+    if type(marker) ~= "table" or tostring(marker.book_id or "") == ""
+        or type(marker.provider_id) ~= "string" then
+        return
+    end
+    local provider_index = index[marker.provider_id]
+    if not provider_index then
+        provider_index = {}
+        index[marker.provider_id] = provider_index
+    end
+    local book_id = tostring(marker.book_id)
+    provider_index[book_id] = provider_index[book_id] or {}
+    provider_index[book_id][#provider_index[book_id] + 1] = {
+        path = path,
+        marker = marker,
+        modification = tonumber(attributes and attributes.modification) or 0,
+        last_opened_at = tonumber(marker.last_opened_at) or 0,
+    }
+end
+
+function Placeholder.build_index(settings)
+    local root = settings:get("target_root", "/mnt/us/Books")
+    local index = {}
+    local visited = {}
+
+    local function visit(directory)
+        if visited[directory] then
+            return
+        end
+        visited[directory] = true
+        local ok, iter, dir_obj = pcall(lfs.dir, directory)
+        if not ok or type(iter) ~= "function" then
+            return
+        end
+        for entry in iter, dir_obj do
+            if entry ~= "." and entry ~= ".." and entry:sub(1, 1) ~= "." then
+                local path = directory .. "/" .. entry
+                local attributes = lfs.attributes(path)
+                if attributes and attributes.mode == "directory" then
+                    visit(path)
+                elseif attributes and attributes.mode == "file"
+                    and entry:lower():sub(-5) == ".html" then
+                    local has_sidecar = true
+                    if type(DocSettings.hasSidecarFile) == "function" then
+                        local sidecar_ok, sidecar_exists =
+                            pcall(DocSettings.hasSidecarFile, DocSettings, path)
+                        has_sidecar = sidecar_ok and sidecar_exists
+                    end
+                    if has_sidecar then
+                        local marker_ok, marker = pcall(sidecar_marker, path)
+                        if marker_ok then
+                            add_index_candidate(index, path, marker, attributes)
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if U.dir_exists(root) then
+        visit(root)
+    end
+    return index
+end
+
+function Placeholder.find_existing(index, provider_id, book_id, stored_path)
+    if stored_path
+        and Placeholder.is_owned(stored_path, provider_id, book_id) then
+        return stored_path
+    end
+    local provider_index = index and index[provider_id]
+    local candidates = provider_index
+        and provider_index[tostring(book_id)]
+    if type(candidates) ~= "table" or #candidates == 0 then
+        return
+    end
+
+    local selected = candidates[1]
+    for candidate_index = 2, #candidates do
+        local candidate = candidates[candidate_index]
+        if candidate.last_opened_at > selected.last_opened_at
+            or (candidate.last_opened_at == selected.last_opened_at
+                and candidate.modification > selected.modification) then
+            selected = candidate
+        end
+    end
+    if #candidates > 1 then
+        logger.warn(
+            "provider-library-bridge: duplicate placeholders",
+            provider_id, tostring(book_id), tostring(#candidates),
+            selected.path
+        )
+    end
+    return selected.path
+end
+
 function Placeholder.is_owned(path, provider_id, book_id)
     if not U.file_exists(path) then
         return false
@@ -241,7 +337,9 @@ local function remove_custom_covers(path)
     end
 end
 
-function Placeholder.upsert(provider, record, settings, allow_network, plugin_path)
+function Placeholder.upsert(
+    provider, record, settings, allow_network, plugin_path, placeholder_index
+)
     local provider_dir = settings:get("target_root", "/mnt/us/Books")
     U.ensure_dir(provider_dir)
 
@@ -249,7 +347,7 @@ function Placeholder.upsert(provider, record, settings, allow_network, plugin_pa
     local display_title = U.display_title(provider, record.title)
     local filename = U.safe_filename(display_title, "untitled")
         .. " [" .. safe_id .. "].html"
-    local path = provider_dir .. "/" .. filename
+    local default_path = provider_dir .. "/" .. filename
     local history_sources = {
         record.cache_path,
         record.book and record.book.cache_dir,
@@ -257,10 +355,13 @@ function Placeholder.upsert(provider, record, settings, allow_network, plugin_pa
         record.book and record.book.cached_file,
     }
     local existing = settings:get_placeholder(provider.id, record.book_id)
-    if existing and existing.path and existing.path ~= path
-        and Placeholder.is_owned(existing.path, provider.id, record.book_id) then
-        Placeholder.remove(existing.path)
+    local old_path = existing and existing.path
+    if not placeholder_index then
+        placeholder_index = Placeholder.build_index(settings)
     end
+    local path = Placeholder.find_existing(
+        placeholder_index, provider.id, record.book_id, old_path
+    ) or default_path
     if U.file_exists(path)
         and not Placeholder.is_owned(path, provider.id, record.book_id) then
         return nil, "目标路径已有其他文件"
@@ -348,9 +449,19 @@ function Placeholder.upsert(provider, record, settings, allow_network, plugin_pa
     doc_settings:saveSetting(
         "provider_library_placeholder", marker
     )
+    local progress_percent = U.progress_percent(record.progress_percent)
+    if progress_percent ~= nil then
+        doc_settings:saveSetting(
+            "percent_finished", progress_percent / 100
+        )
+    end
     doc_settings:saveSetting("summary", {
-        status = "reading",
-        modified = os.date("%Y-%m-%d"),
+        status = progress_percent and progress_percent >= 99.5
+            and "complete" or "reading",
+        modified = os.date(
+            "%Y-%m-%d",
+            tonumber(record.read_timestamp) or os.time()
+        ),
     })
     doc_settings:flush()
 
@@ -386,6 +497,7 @@ function Placeholder.upsert(provider, record, settings, allow_network, plugin_pa
         updated_at = os.time(),
     })
 
+    History.move(old_path, path)
     UIManager:broadcastEvent(Event:new("InvalidateMetadataCache", path))
     return created and "created" or "updated"
 end

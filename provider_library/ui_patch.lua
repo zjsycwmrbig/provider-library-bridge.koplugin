@@ -7,8 +7,48 @@ local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 
 local History = require("provider_library.history")
+local U = require("provider_library.util")
 
 local UIPatch = {}
+
+local function preserve_placeholder_progress(reader_module)
+    local ui = reader_module and reader_module.ui
+    if not (ui and ui.doc_settings) then
+        return
+    end
+    local marker = ui.doc_settings:readSetting(
+        "provider_library_placeholder"
+    )
+    if type(marker) ~= "table" then
+        return
+    end
+    local percent = U.progress_percent(marker.progress_percent)
+    if percent ~= nil then
+        ui.doc_settings:saveSetting("percent_finished", percent / 100)
+    end
+end
+
+local function patch_progress_save(module_name)
+    local ok, reader_module = pcall(require, module_name)
+    if not (ok and reader_module
+        and type(reader_module.onSaveSettings) == "function") then
+        return
+    end
+    local marker = "_provider_library_bridge_original_save_settings"
+    if reader_module[marker] then
+        return
+    end
+    reader_module[marker] = reader_module.onSaveSettings
+    reader_module.onSaveSettings = function(self, ...)
+        reader_module[marker](self, ...)
+        preserve_placeholder_progress(self)
+    end
+end
+
+function UIPatch.installProgressGuard()
+    patch_progress_save("apps/reader/modules/readerpaging")
+    patch_progress_save("apps/reader/modules/readerrolling")
+end
 
 local function mosaic_item_class()
     local ok_mm, MosaicMenu = pcall(require, "mosaicmenu")
@@ -114,6 +154,7 @@ end
 
 function UIPatch.install(plugin_name)
     History.install()
+    UIPatch.installProgressGuard()
     if FileChooser._provider_library_bridge_original_mandatory then
         return
     end

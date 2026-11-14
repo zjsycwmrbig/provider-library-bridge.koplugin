@@ -10,6 +10,7 @@ end
 package.preload["provider_library.placeholder"] = function()
     return {
         upsert = function() return "unchanged" end,
+        build_index = function() return {} end,
     }
 end
 package.preload["provider_library.util"] = function()

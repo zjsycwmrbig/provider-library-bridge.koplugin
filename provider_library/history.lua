@@ -133,6 +133,47 @@ function History.remove_canonical(path)
     end
 end
 
+function History.move(old_path, new_path)
+    old_path = normalize(old_path)
+    new_path = normalize(new_path)
+    if not (old_path and new_path and old_path ~= new_path) then
+        return
+    end
+
+    local store = settings_store()
+    if store then
+        local map = read_map()
+        local changed = false
+        for source, target in pairs(map) do
+            if normalize(target) == old_path then
+                map[source] = new_path
+                changed = true
+            end
+        end
+        if changed then
+            write_map(store, map)
+        end
+    end
+
+    local ok, ReadHistory = pcall(require, "readhistory")
+    if not (ok and ReadHistory and type(ReadHistory.hist) == "table") then
+        History.flush()
+        return
+    end
+    local changed = false
+    for _, item in ipairs(ReadHistory.hist) do
+        if item and normalize(item.file) == old_path then
+            item.file = new_path
+            item.text = new_path:gsub(".*/", "")
+            changed = true
+        end
+    end
+    if changed and type(ReadHistory._flush) == "function" then
+        ReadHistory:_flush()
+    end
+    History.flush()
+end
+
 function History.install()
     local ok, ReadHistory = pcall(require, "readhistory")
     if not (ok and ReadHistory and type(ReadHistory.addItem) == "function") then
