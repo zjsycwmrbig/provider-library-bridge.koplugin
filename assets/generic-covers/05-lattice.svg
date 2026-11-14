@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200"
+     viewBox="0 0 900 1200">
+  <title>纸上的银河</title>
+  <defs>
+    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="#626a65" stroke-width="2"/>
+    </pattern>
+  </defs>
+  <rect width="900" height="1200" fill="#202423"/>
+  <rect width="900" height="1200" fill="url(#grid)" opacity=".48"/>
+  <rect x="62" y="112" width="776" height="742" rx="3"
+        fill="#2f3533" stroke="#e1ded3" stroke-width="4"/>
+  <rect x="80" y="130" width="740" height="706" rx="2"
+        fill="none" stroke="#949b95" stroke-width="1.5"/>
+  <path d="M154 130V836M746 130V836" stroke="#757d77" stroke-width="2"/>
+  <path d="M80 736H820" stroke="#e1ded3" stroke-width="2.5" opacity=".8"/>
+  <g fill="#0e1110" opacity=".36">
+    <path d="M112 160h102v102H112z"/>
+    <path d="M686 590h102v214H686z"/>
+  </g>
+  <g stroke="#ece9df" stroke-width="3" opacity=".75">
+    <path d="M128 214h72"/>
+    <path d="M128 226h44"/>
+    <path d="M702 744h70"/>
+    <path d="M702 756h70"/>
+  </g>
+  <text x="58" y="66" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif" font-size="17"
+        letter-spacing="4" fill="#cfd1ca">ONLINE LIBRARY</text>
+  <text x="450" y="786" text-anchor="middle" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif" font-size="84" font-weight="600" fill="#f5f2e9">纸上的银河</text>
+  
+  <line x1="138" y1="1042" x2="762" y2="1042" stroke="#bcc0ba" stroke-width="2"/>
+  <text x="450" y="1090" text-anchor="middle" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif"
+        font-size="34" fill="#eeece4">周野</text>
+  <text x="450" y="1144" text-anchor="middle" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif"
+        font-size="17" letter-spacing="4" fill="#bcc0ba">KOREADER · ONLINE LIBRARY</text>
+
+</svg>

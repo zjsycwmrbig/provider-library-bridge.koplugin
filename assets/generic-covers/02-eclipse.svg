@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200"
+     viewBox="0 0 900 1200">
+  <title>长夜将尽</title>
+  <rect width="900" height="1200" fill="#1d201f"/>
+  <g fill="none" stroke="#b9b8b0">
+    <circle cx="704" cy="274" r="166" fill="#d0cab8" stroke="none"/>
+    <circle cx="704" cy="274" r="196" stroke-width="3" opacity=".9"/>
+    <circle cx="704" cy="274" r="244" stroke-width="2" opacity=".46"/>
+    <circle cx="704" cy="274" r="306" stroke-width="2" opacity=".28"/>
+    <circle cx="704" cy="274" r="382" stroke-width="1.5" opacity=".17"/>
+  </g>
+  <g stroke="#dddbd2" stroke-width="2" opacity=".38">
+    <path d="M704 82V26"/>
+    <path d="M850 170l58-34"/>
+    <path d="M889 274h65"/>
+    <path d="M847 382l57 34"/>
+    <path d="M315 274H56"/>
+    <path d="M412 179L355 119"/>
+    <path d="M423 372l-50 58"/>
+  </g>
+  <path d="M56 690H844" stroke="#d9d6cb" stroke-width="3" opacity=".8"/>
+  <text x="58" y="66" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif" font-size="17"
+        letter-spacing="4" fill="#c3c3bc">ONLINE LIBRARY</text>
+  <text x="450" y="774" text-anchor="middle" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif" font-size="84" font-weight="600" fill="#f5f2e8">长夜将尽</text>
+  
+  <line x1="138" y1="1042" x2="762" y2="1042" stroke="#b7b8b1" stroke-width="2"/>
+  <text x="450" y="1090" text-anchor="middle" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif"
+        font-size="34" fill="#eceae1">林舟</text>
+  <text x="450" y="1144" text-anchor="middle" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif"
+        font-size="17" letter-spacing="4" fill="#b7b8b1">KOREADER · ONLINE LIBRARY</text>
+
+</svg>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200"
+     viewBox="0 0 900 1200">
+  <title>远山来信</title>
+  <rect width="900" height="1200" fill="#3d4441"/>
+  <g fill="none" stroke-linecap="round">
+    <path d="M-110 300C80 120 280 420 474 252S800 40 1030 262"
+          stroke="#bfc3bc" stroke-width="24" opacity=".12"/>
+    <path d="M-80 360C124 170 322 478 540 292S845 108 1040 336"
+          stroke="#e1e1da" stroke-width="3" opacity=".46"/>
+    <path d="M-70 446C150 240 366 555 588 370S870 212 1028 434"
+          stroke="#d6d8d1" stroke-width="2" opacity=".30"/>
+    <path d="M-80 970C160 758 332 1074 572 878S878 742 1030 948"
+          stroke="#0f1211" stroke-width="70" opacity=".20"/>
+    <path d="M-80 1016C174 828 342 1130 602 944S900 820 1028 1010"
+          stroke="#f0eee5" stroke-width="2" opacity=".25"/>
+  </g>
+  <path d="M690 150V1010" stroke="#121514" stroke-width="1.5" opacity=".34"/>
+  <path d="M716 150V1010" stroke="#d8dad3" stroke-width="1.5" opacity=".16"/>
+  <text x="58" y="66" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif" font-size="17"
+        letter-spacing="4" fill="#d3d5ce">ONLINE LIBRARY</text>
+  <text x="450" y="786" text-anchor="middle" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif" font-size="84" font-weight="600" fill="#f5f2e9">远山来信</text>
+  
+  <line x1="138" y1="1042" x2="762" y2="1042" stroke="#c2c5be" stroke-width="2"/>
+  <text x="450" y="1090" text-anchor="middle" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif"
+        font-size="34" fill="#eeece4">沈原</text>
+  <text x="450" y="1144" text-anchor="middle" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif"
+        font-size="17" letter-spacing="4" fill="#c2c5be">KOREADER · ONLINE LIBRARY</text>
+
+</svg>
