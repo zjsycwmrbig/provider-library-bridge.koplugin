@@ -34,7 +34,8 @@ package.preload["util"] = function()
             end
             return chars
         end,
-        writeToFile = function(content, path)
+        writeToFile = function(content, path, flush, lua_dofile_ready)
+            assert(flush and not lua_dofile_ready, "HTML and images must be raw bytes")
             if path:match("%.html$") then
                 captured_html = content
             elseif path == "/tmp/generic.svg" then
@@ -108,6 +109,7 @@ package.path = "./?.lua;" .. package.path
 
 local Placeholder = require("provider_library.placeholder")
 local settings = {
+    data_dir = "/tmp/provider-library-test",
     values = {},
     get = function(self, key, default)
         return self.values[key] or default
@@ -160,5 +162,35 @@ assert(marker.tag == "番茄")
 assert(marker.cover_kind == "generic")
 assert(marker.cover_variant == "eclipse")
 assert(marker.marker_schema == 2)
+
+-- A provider may lose its local cover while the bridge still has a valid cache.
+local original_open = io.open
+local cached_cover = settings.data_dir .. "/covers/fanqie-" .. record.book_id .. ".jpg"
+io.open = function(path, mode)
+    if path == cached_cover then
+        return { read = function() return "\255\216\255cached-image" end,
+            close = function() end }
+    end
+    return original_open(path, mode)
+end
+local lfs = require("libs/libkoreader-lfs")
+local original_attributes = lfs.attributes
+lfs.attributes = function(path, field)
+    if path == cached_cover then
+        return field == "mode" and "file" or { mode = "file", size = 16 }
+    end
+    return original_attributes(path, field)
+end
+result, err = Placeholder.upsert(provider, record, settings, false, ".")
+assert(result == "created", err)
+assert(written_settings.cover.cover == cached_cover)
+assert(marker ~= written_settings[
+    "/mnt/us/Books/黑死馆杀人事件 [7011072854741486628].html"
+].provider_library_placeholder)
+assert(written_settings[
+    "/mnt/us/Books/黑死馆杀人事件 [7011072854741486628].html"
+].provider_library_placeholder.cover_kind == "official")
+io.open = original_open
+lfs.attributes = original_attributes
 
 print("placeholder_spec: ok")

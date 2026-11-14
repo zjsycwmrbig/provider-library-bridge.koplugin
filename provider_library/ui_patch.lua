@@ -81,7 +81,7 @@ local function paint_tag_badge(item, bb, cell_x, cell_y)
     if not cover_y or cover_y == 0 then
         cover_y = cell_y + math.floor(((item.height or dimen.h) - dimen.h) / 2)
     end
-    local badge_x = math.floor(cover_x + (dimen.w - badge_w) / 2)
+    local badge_x = math.floor(cover_x + screen:scaleBySize(7))
     local badge_y = math.floor(cover_y + screen:scaleBySize(7))
     bb:paintRect(
         badge_x, badge_y, badge_w, badge_h, Blitbuffer.COLOR_WHITE

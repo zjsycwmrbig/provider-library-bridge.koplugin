@@ -22,7 +22,7 @@
   {{TITLE_MARKUP}}
   
   <line x1="138" y1="1042" x2="762" y2="1042" stroke="#c2c5be" stroke-width="2"/>
-  <text x="450" y="1090" text-anchor="middle" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif"
+  <text x="450" y="1090" text-anchor="middle" font-family="'LXGW WenKai Lite','LXGW WenKai','KaiTi',serif"
         font-size="34" fill="#eeece4">{{AUTHOR}}</text>
   <text x="450" y="1144" text-anchor="middle" font-family="'LXGW WenKai','Kaiti SC','STKaiti','KaiTi',serif"
         font-size="17" letter-spacing="4" fill="#c2c5be">KOREADER · ONLINE LIBRARY</text>

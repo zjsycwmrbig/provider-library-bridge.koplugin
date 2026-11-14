@@ -79,6 +79,13 @@ local function ensure_cover(settings, provider_record, allow_network)
     if provider_record.cover_path and is_image_file(provider_record.cover_path) then
         return provider_record.cover_path
     end
+    for _, extension in ipairs({ "jpg", "png", "webp", "gif" }) do
+        local cached = cover_cache_path(settings, provider_record.provider_id,
+            provider_record.book_id, extension)
+        if is_image_file(cached) then
+            return cached
+        end
+    end
     if not allow_network then
         return nil
     end
@@ -94,7 +101,7 @@ local function ensure_cover(settings, provider_record, allow_network)
         provider_record.book_id,
         extension
     )
-    local ok = util.writeToFile(data, path, true, true)
+    local ok = util.writeToFile(data, path, true, false)
     if ok then
         return path
     end
@@ -263,9 +270,13 @@ function Placeholder.upsert(provider, record, settings, allow_network, plugin_pa
     local existing_cover = DocSettings:findCustomCoverFile(path)
     local has_cover_source = record.cover_path or record.cover_url
     local existing_marker = sidecar_marker(path)
+    signature = signature .. "\n" .. tostring(
+        existing_marker and existing_marker.last_opened_at or 0
+    )
     record.last_opened_at = existing_marker and existing_marker.last_opened_at
     record.last_sync = os.time()
     local cover_is_ready = existing_cover ~= nil
+        and not existing_cover:match("%.svg$")
     local retry_official_cover = allow_network
         and has_cover_source
         and existing_marker
@@ -279,13 +290,18 @@ function Placeholder.upsert(provider, record, settings, allow_network, plugin_pa
 
     local created = not U.file_exists(path)
     local wrote = util.writeToFile(
-        placeholder_html(provider, record), path, true, true
+        placeholder_html(provider, record), path, true, false
     )
     if not wrote then
         return nil, "写入占位书失败"
     end
 
     local official_cover = ensure_cover(settings, record, allow_network)
+    if not official_cover and existing_marker
+        and existing_marker.cover_kind == "official"
+        and is_image_file(existing_cover) then
+        official_cover = existing_cover
+    end
     local cover_path = official_cover
     local cover_kind = official_cover and "official" or nil
     local cover_variant
@@ -327,14 +343,20 @@ function Placeholder.upsert(provider, record, settings, allow_network, plugin_pa
     doc_settings:flush()
 
     if cover_path and U.file_exists(cover_path) then
-        remove_custom_covers(path)
-        local ok, err = pcall(
-            DocSettings.flushCustomCover, DocSettings, path, cover_path
-        )
-        if not ok then
+        -- Never delete an official cover when it is also our copy source.
+        local ok, result
+        if cover_path == existing_cover then
+            ok, result = true, true
+        else
+            remove_custom_covers(path)
+            ok, result = pcall(
+                DocSettings.flushCustomCover, DocSettings, path, cover_path
+            )
+        end
+        if not ok or not result then
             logger.warn(
                 "provider-library-bridge: custom cover failed",
-                provider.id, tostring(record.book_id), tostring(err)
+                provider.id, tostring(record.book_id), tostring(result)
             )
         end
     elseif has_cover_source then

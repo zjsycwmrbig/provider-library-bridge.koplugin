@@ -63,11 +63,12 @@
 ## 封面与显示
 
 占位书通过 KOReader 的原生自定义封面机制写入。官方封面可能是 JPG/PNG，
-默认封面则是 SVG：
+默认封面从 SVG 模板生成，使用内置霞鹜文楷 Lite 渲染并缓存为 PNG，
+避免部分界面的 SVG 渲染器不支持文字：
 
 ```text
 书名.sdr/cover.jpg
-书名.sdr/cover.svg
+书名.sdr/cover.png
 ```
 
 可以在“封面网格”“带封面详细列表”等显示模式中显示。纯文字列表本来不显示图片。
@@ -76,6 +77,8 @@
 通用封面位于 `assets/generic-covers/`，由 `provider_library/generic_cover.lua`
 按书籍生成标题和作者。三套封面分别是“暗日”“流线”和“墨格”，会根据
 Provider 与书号稳定选择，因此同一本书不会每次同步都换封面。
+已下载的官方封面会缓存并在离线同步时复用。内置字体采用 SIL OFL 1.1，
+来源为 https://github.com/lxgw/LxgwWenKai-Lite ，许可证随字体保存在 assets/fonts/OFL.txt。
 
 ## 打开流程
 
