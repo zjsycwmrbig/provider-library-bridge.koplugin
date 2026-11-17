@@ -349,7 +349,7 @@ function Placeholder.upsert(
     local filename = U.safe_filename(display_title, "untitled")
         .. " [" .. safe_id .. "].html"
     local default_path = provider_dir .. "/" .. filename
-    local history_sources = {
+    local history_sources = record.history_sources or {
         record.cache_path,
         record.book and record.book.cache_dir,
         record.book and record.book.cached_full_book,

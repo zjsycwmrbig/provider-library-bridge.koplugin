@@ -45,7 +45,7 @@ progress_percent 接受百分数或 0～1 比例，但应保持来源侧单位�
 1. 更新 _meta.lua 中的版本，并新增 docs/releases/vX.Y.Z.md。
 2. 运行检查、打包和相关实机验收。注明已测和未测范围。
 3. 提交所有改动；本仓库维护约定的提交信息以 [ai] 开头。
-4. 推送 main 后创建标签，例如 git tag v0.5.1，再 git push origin v0.5.1。
+4. 推送 main 后创建标签，例如 git tag v0.6.0，再 git push origin v0.6.0。
 5. Release 工作流验证标签与版本一致，自动创建预发布版并附 ZIP、SHA256SUMS。
 6. 充分实机验证后，在 GitHub 编辑 Release，取消 prerelease 标记。
 
