@@ -159,5 +159,8 @@ assert(cached[1].book_id == "10")
 
 assert(Provider:open(plugin, known[1].book))
 assert(tostring(opened.id) == "10")
+assert(Provider:display_title("Ura Baito: Toubou Kinshi")
+    == "Ura Baito: Toubou Kinshi")
+assert(Provider:display_title("灰色兼职：逃亡禁止") == "灰色兼职：逃亡禁止")
 
 print("suwayomi_provider_spec: ok")

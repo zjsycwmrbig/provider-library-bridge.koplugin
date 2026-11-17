@@ -18,7 +18,7 @@ plugins in KOReader's local library, with covers and provider badges.
 插件不会修改番茄小说或微信读书插件。点击占位书时，本插件通过各来源插件已有的
 实例接口打开对应书。
 
-当前为 **v0.6.0 公开预览版**。已完成 Kindle 安装、文件校验、Lua 测试及三款
+当前为 **v0.7.0 公开预览版**。已完成 Kindle 安装、文件校验、Lua 测试及三款
 默认封面的实机引擎渲染验证；重启后的完整书架显示、标签位置和点击跳转仍需进一步验证。
 
 ## 安装与升级
@@ -73,6 +73,7 @@ GitHub 自动生成的 Source code ZIP 会包含仓库外层目录，建议使�
 ## 功能
 
 - 可同步来源插件已知书架中的全部书，也可切换为只同步已缓存书籍；
+- 可扫描来源插件，并逐个勾选参与同步的 Provider；
 - Suwayomi 以漫画为单位生成一本占位书，而不是为每个章节生成一本；
 - 为缓存和未缓存书生成很小的 HTML 占位书；
 - 把来源标签保存在占位书 sidecar 中，不污染书名和封面；
@@ -118,12 +119,17 @@ GitHub 自动生成的 Source code ZIP 会包含仓库外层目录，建议使�
 
 - 立即同步
 - 同步范围
+- 同步来源
 - 定时同步
 - 同步间隔
 - 上次同步
 - 清除在线书库占位书
 
 定时同步仅在 KOReader 运行期间生效，不在系统后台常驻。
+
+“同步来源”会列出当前插件包含的全部 Provider。已安装并启用的来源插件显示为可勾选；
+插件缺失或停用时显示“插件未启用”。“重新扫描来源插件”会重新加载 Provider 适配器
+并刷新可用状态。
 
 ## 同步范围
 
@@ -180,8 +186,11 @@ Suwayomi 没有本地章节的 Library 漫画也会显示；`仅已缓存` 只�
 通用封面位于 `assets/generic-covers/`，由 `provider_library/generic_cover.lua`
 按书籍生成标题和作者。三套封面分别是“暗日”“流线”和“墨格”，会根据
 Provider 与书号稳定选择，因此同一本书不会每次同步都换封面。
-已下载的官方封面会缓存并在离线同步时复用。内置字体采用 SIL OFL 1.1，
+已下载的官方封面会缓存并在离线同步时复用。Suwayomi 会读取其
+`poster`/`manga_cover` 本地缩略图缓存；服务器可用时也会补抓封面。内置字体采用 SIL OFL 1.1，
 来源为 https://github.com/lxgw/LxgwWenKai-Lite ，许可证随字体保存在 assets/fonts/OFL.txt。
+
+Suwayomi 显示标题保留来源书名中的冒号等标点；其他来源继续使用通用标题符号清洗规则。
 
 ## 打开流程
 
@@ -265,7 +274,7 @@ Kindle 上本插件的数据位置：
 
 - [开发与测试](docs/DEVELOPMENT.md)
 - [贡献指南](CONTRIBUTING.md)
-- [v0.6.0 发布说明](docs/releases/v0.6.0.md)
+- [v0.7.0 发布说明](docs/releases/v0.7.0.md)
 - 代码和原创 SVG： [AGPL-3.0](LICENSE)
 - 内置字体：SIL OFL 1.1，见 [第三方声明](THIRD_PARTY_NOTICES.md)
 

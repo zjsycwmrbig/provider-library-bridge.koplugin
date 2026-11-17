@@ -34,5 +34,8 @@ assert(U.progress_percent(0.425) == 42.5)
 assert(U.progress_percent(42.5) == 42.5)
 assert(U.progress_percent(150) == 100)
 assert(U.format_bytes(1536) == "2 KB")
+assert(U.display_title({
+    display_title = function(_, title) return title end,
+}, "Ura Baito: Toubou Kinshi") == "Ura Baito: Toubou Kinshi")
 
 print("util_spec: ok")

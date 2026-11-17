@@ -203,6 +203,9 @@ function U.safe_filename(value, fallback)
 end
 
 function U.display_title(provider, title)
+    if provider and type(provider.display_title) == "function" then
+        return provider:display_title(title)
+    end
     return U.clean_title(title)
 end
 

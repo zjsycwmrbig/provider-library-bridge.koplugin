@@ -51,6 +51,21 @@ local function format_last_sync(timestamp)
     return os.date("%Y-%m-%d %H:%M", timestamp)
 end
 
+local function provider_plugin(ui, provider)
+    if ui and ui[provider.plugin_name] then
+        return ui[provider.plugin_name]
+    end
+    if PluginLoader and PluginLoader.getPluginInstance then
+        local ok, instance = pcall(
+            PluginLoader.getPluginInstance, PluginLoader,
+            provider.plugin_name
+        )
+        if ok then
+            return instance
+        end
+    end
+end
+
 function ProviderLibraryBridge:init()
     self.settings = Settings:new()
     self.providers = Registry.load(self.path)
@@ -59,6 +74,23 @@ function ProviderLibraryBridge:init()
         self.ui.menu:registerToMainMenu(self)
     end
     self:startScheduler()
+end
+
+function ProviderLibraryBridge:rescanProviders()
+    self.providers = Registry.load(self.path)
+    local available = 0
+    for _, provider in ipairs(self.providers) do
+        if provider_plugin(self.ui, provider) then
+            available = available + 1
+        end
+    end
+    UIManager:show(InfoMessage:new{
+        text = string.format(
+            _("已扫描到 %d 个来源适配器\n其中 %d 个来源插件当前可用"),
+            #self.providers, available
+        ),
+        timeout = 3,
+    })
 end
 
 function ProviderLibraryBridge:startScheduler()
@@ -279,6 +311,77 @@ function ProviderLibraryBridge:getSyncScopeItems()
     return items
 end
 
+function ProviderLibraryBridge:providerIsAvailable(provider)
+    return provider_plugin(self.ui, provider) ~= nil
+end
+
+function ProviderLibraryBridge:setProviderEnabled(provider, enabled)
+    self.settings:set_provider_enabled(provider.id, enabled)
+    self.settings:flush()
+    UIManager:show(InfoMessage:new{
+        text = string.format(
+            enabled and _("已启用来源：%s") or _("已停用来源：%s"),
+            provider.label
+        ),
+        timeout = 2,
+    })
+end
+
+function ProviderLibraryBridge:getProviderSelectionSummary()
+    local available = 0
+    local enabled = 0
+    for _, provider in ipairs(self.providers or {}) do
+        if self:providerIsAvailable(provider) then
+            available = available + 1
+            if self.settings:is_provider_enabled(provider.id) then
+                enabled = enabled + 1
+            end
+        end
+    end
+    return enabled, available
+end
+
+function ProviderLibraryBridge:getProviderItems()
+    local items = {
+        {
+            text = _("重新扫描来源插件"),
+            callback = function()
+                self:rescanProviders()
+            end,
+            keep_menu_open = true,
+            separator = true,
+        },
+    }
+    for _, provider in ipairs(self.providers or {}) do
+        local selected_provider = provider
+        local available = self:providerIsAvailable(selected_provider)
+        items[#items + 1] = {
+            text_func = function()
+                local label = selected_provider.label
+                if not available then
+                    label = label .. _("（插件未启用）")
+                end
+                return label
+            end,
+            checked_func = function()
+                return available
+                    and self.settings:is_provider_enabled(selected_provider.id)
+            end,
+            enabled_func = function()
+                return available
+            end,
+            callback = function()
+                local enabled = self.settings:is_provider_enabled(
+                    selected_provider.id
+                )
+                self:setProviderEnabled(selected_provider, not enabled)
+            end,
+            keep_menu_open = true,
+        }
+    end
+    return items
+end
+
 function ProviderLibraryBridge:getAutoSyncIntervalItems()
     local presets = {
         { 15, _("15 分钟") },
@@ -332,6 +435,18 @@ function ProviderLibraryBridge:getSettingsMenuItems()
         end,
         sub_item_table_func = function()
             return self:getSyncScopeItems()
+        end,
+    }
+    items[#items + 1] = {
+        text_func = function()
+            local enabled, available = self:getProviderSelectionSummary()
+            return string.format(
+                _("同步来源：%d / %d 个可用"),
+                enabled, available
+            )
+        end,
+        sub_item_table_func = function()
+            return self:getProviderItems()
         end,
     }
     items[#items + 1] = {

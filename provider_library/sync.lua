@@ -56,9 +56,11 @@ function Sync.run(context)
     end
 
     for _, provider in ipairs(context.providers or {}) do
-        local plugin = provider_plugin(
+        local enabled = type(context.settings.is_provider_enabled) ~= "function"
+            or context.settings:is_provider_enabled(provider.id)
+        local plugin = enabled and provider_plugin(
             context.ui, context.plugin_loader, provider
-        )
+        ) or nil
         if plugin then
             local ok, records = pcall(provider.scan, provider, plugin, {
                 scope = scope,

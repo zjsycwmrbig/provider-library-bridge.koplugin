@@ -83,9 +83,22 @@ local function local_cover(plugin, manga, options)
         return nil
     end
 
-    local ok_find, cached = pcall(
-        ThumbnailCache.find, credentials, manga.thumbnail_url
-    )
+    local ok_find, cached
+    for _, thumbnail_options in ipairs({
+        { variant = "poster", width = 320, height = 480 },
+        { variant = "manga_cover", width = 64, height = 96 },
+    }) do
+        ok_find, cached = pcall(
+            ThumbnailCache.find,
+            credentials,
+            manga.thumbnail_url,
+            thumbnail_options
+        )
+        if ok_find and U.file_exists(cached) then
+            break
+        end
+        cached = nil
+    end
     local data_dir = options
         and options.settings
         and options.settings.data_dir
@@ -340,6 +353,11 @@ function Provider:open(plugin, book)
         return false, "无法打开 Suwayomi 章节列表"
     end
     return true
+end
+
+function Provider:display_title(title)
+    local value = U.trim(title)
+    return value ~= "" and value or "无题"
 end
 
 return Provider

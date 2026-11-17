@@ -8,6 +8,7 @@ local DEFAULTS = {
     version = 1,
     target_root = "/mnt/us/Books",
     sync_scope = "known_shelf",
+    disabled_providers = {},
     auto_sync_enabled = false,
     auto_sync_interval_minutes = 1440,
     last_auto_attempt = 0,
@@ -84,6 +85,24 @@ end
 
 function Settings:all_placeholders()
     return self:get("placeholders", {})
+end
+
+function Settings:is_provider_enabled(provider_id)
+    local disabled = self:get("disabled_providers", {})
+    return type(disabled) ~= "table" or disabled[provider_id] ~= true
+end
+
+function Settings:set_provider_enabled(provider_id, enabled)
+    local disabled = self:get("disabled_providers", {})
+    if type(disabled) ~= "table" then
+        disabled = {}
+    end
+    if enabled then
+        disabled[provider_id] = nil
+    else
+        disabled[provider_id] = true
+    end
+    self:set("disabled_providers", disabled)
 end
 
 return Settings
