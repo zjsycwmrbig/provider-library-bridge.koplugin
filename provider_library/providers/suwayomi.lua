@@ -343,48 +343,56 @@ function Provider:scan(plugin, options)
     end
     options = options or {}
     local data = load_settings()
+    local library = data.library_cache
+    local function normalize_scope(value)
+        return type(value) == "string" and value:gsub("/+$", "") or nil
+    end
+    local scope = normalize_scope(data.credentials and data.credentials.server_url)
+    if not scope or scope == "" or type(library) ~= "table"
+        or library.version ~= 1 or library.endpoint_scope ~= scope
+        or type(library.manga) ~= "table" then
+        error("Suwayomi 当前服务器没有有效书架快照，请先在 Suwayomi 刷新书架")
+    end
     local downloads = collect_downloads(data)
     local mangas = {}
-
-    local function ensure(manga)
-        if type(manga) ~= "table" or manga.id == nil then
-            return
+    local count, seen = 0, {}
+    for key, manga in pairs(library.manga) do
+        count = count + 1
+        if type(key) ~= "number" or key < 1 or key ~= math.floor(key)
+            or type(manga) ~= "table" or manga.id == nil
+            or tostring(manga.id) == "" or seen[tostring(manga.id)]
+            or (manga.endpoint_scope and manga.endpoint_scope ~= scope) then
+            error("Suwayomi 书架快照不完整，请先在 Suwayomi 刷新书架")
         end
-        local manga_id = tostring(manga.id)
-        mangas[manga_id] = merge_manga(mangas[manga_id] or {}, manga)
+        seen[tostring(manga.id)] = true
+        if manga.in_library ~= false then
+            mangas[tostring(manga.id)] = merge_manga({}, manga)
+        end
     end
-
-    for _, manga in ipairs(
-        (data.library_cache and data.library_cache.manga) or {}
-    ) do
-        ensure(manga)
-    end
+    if count ~= #library.manga then error("Suwayomi 书架快照不完整") end
     local chapter_cache = data.chapter_cache or {}
-    for manga_id, listing in pairs(chapter_cache.mangas or {}) do
-        if type(listing) == "table" then
-            ensure(merge_manga(
-                { id = manga_id, chapters = listing.chapters or {} },
-                listing.manga
-            ))
-        end
-    end
-    for manga_id, entries in pairs(downloads) do
-        for _, entry in pairs(entries) do
-            ensure({
-                id = manga_id,
-                title = entry.manga_title,
-                endpoint_scope = entry.endpoint_scope,
-            })
-            break
-        end
-    end
+    if chapter_cache.endpoint_scope ~= scope then chapter_cache = {} end
+    local membership = {}
 
     local records = {}
     for manga_id, manga in pairs(mangas) do
+        membership[manga_id] = true
         local listing = chapter_cache.mangas
             and chapter_cache.mangas[manga_id]
+        if type(listing) == "table" and type(listing.manga) == "table"
+            and listing.manga.endpoint_scope ~= nil
+            and listing.manga.endpoint_scope ~= scope then listing = nil end
+        -- Chapter caches enrich metadata but never restore Library membership.
+        manga = merge_manga(merge_manga({}, listing and listing.manga), manga)
+        manga.endpoint_scope = scope
+        manga.in_library = true
         local chapters = listing and listing.chapters or {}
-        local local_downloads = downloads[manga_id] or {}
+        local local_downloads = {}
+        for path, entry in pairs(downloads[manga_id] or {}) do
+            if entry.endpoint_scope == nil or entry.endpoint_scope == scope then
+                local_downloads[path] = entry
+            end
+        end
         local cached_count = 0
         for _ in pairs(local_downloads) do
             cached_count = cached_count + 1
@@ -398,7 +406,7 @@ function Provider:scan(plugin, options)
     table.sort(records, function(left, right)
         return left.title < right.title
     end)
-    return records
+    return records, { library_members = membership, endpoint_scope = scope }
 end
 
 function Provider:prepare(_plugin, book)

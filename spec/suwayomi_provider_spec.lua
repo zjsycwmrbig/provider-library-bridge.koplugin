@@ -7,6 +7,7 @@ local folder = "/koreader/suwayomi/source/manga"
 local data = {
     credentials = { server_url = "http://suwayomi.test" },
     library_cache = {
+        version = 1,
         endpoint_scope = "http://suwayomi.test",
         manga = {
             {
@@ -26,6 +27,7 @@ local data = {
         },
     },
     chapter_cache = {
+        endpoint_scope = "http://suwayomi.test",
         mangas = {
             ["10"] = {
                 manga = {
@@ -205,5 +207,27 @@ assert(opened_options == nil)
 assert(Provider:display_title("Ura Baito: Toubou Kinshi")
     == "Ura Baito: Toubou Kinshi")
 assert(Provider:display_title("灰色兼职：逃亡禁止") == "灰色兼职：逃亡禁止")
+
+local removed_manga = data.library_cache.manga[1]
+table.remove(data.library_cache.manga, 1)
+data.chapter_cache.mangas["10"].manga.in_library = true
+local after_removal, snapshot = Provider:scan(plugin, { scope = "known_shelf" })
+assert(#after_removal == 1 and after_removal[1].book_id == "20")
+assert(snapshot.library_members["10"] == nil)
+assert(snapshot.library_members["20"] == true)
+assert(#Provider:scan(plugin, { scope = "cached_only" }) == 0)
+data.library_cache.manga = {}
+local empty, empty_snapshot = Provider:scan(plugin)
+assert(#empty == 0 and next(empty_snapshot.library_members) == nil)
+data.library_cache.manga = { removed_manga }
+data.chapter_cache.endpoint_scope = "http://foreign.test"
+local foreign_chapters = Provider:scan(plugin)
+assert(#foreign_chapters == 1 and foreign_chapters[1].total_count == 0)
+data.library_cache.endpoint_scope = "http://foreign.test"
+assert(not pcall(Provider.scan, Provider, plugin))
+data.library_cache = nil
+assert(not pcall(Provider.scan, Provider, plugin))
+data.library_cache = { version = 1, endpoint_scope = "http://suwayomi.test", manga = { bad = {} } }
+assert(not pcall(Provider.scan, Provider, plugin))
 
 print("suwayomi_provider_spec: ok")

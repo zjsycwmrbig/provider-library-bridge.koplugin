@@ -193,4 +193,19 @@ assert(written_settings[placeholder_path].provider_library_placeholder.cover_kin
 io.open = original_open
 lfs.attributes = original_attributes
 
+-- A failed unlink must preserve sidecars and history for a later retry.
+local original_remove = os.remove
+lfs.attributes = function(path, field)
+    if path == placeholder_path then
+        return field == "mode" and "file" or { mode = "file" }
+    end
+    return original_attributes(path, field)
+end
+os.remove = function() return nil, "permission denied" end
+local removed, remove_error = Placeholder.remove(placeholder_path, true)
+assert(removed == false and remove_error == "permission denied")
+assert(written_settings[placeholder_path].provider_library_placeholder)
+os.remove = original_remove
+lfs.attributes = original_attributes
+
 print("placeholder_spec: ok")

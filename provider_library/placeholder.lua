@@ -317,15 +317,23 @@ function Placeholder.is_owned(path, provider_id, book_id)
         and tostring(marker.book_id) == tostring(book_id)
 end
 
+function Placeholder.matches_endpoint(path, endpoint_scope)
+    local marker = sidecar_marker(path)
+    local scope = type(marker) == "table" and marker.book and marker.book.endpoint_scope
+    return scope == endpoint_scope
+end
+
 function Placeholder.remove(path, remove_history)
+    if U.file_exists(path) then
+        local removed, err = os.remove(path)
+        if not removed then return false, err end
+    end
     History.unregister(path)
     if remove_history then
         History.remove_canonical(path)
     end
-    if U.file_exists(path) then
-        os.remove(path)
-    end
     U.remove_sidecar(path)
+    return true
 end
 
 local function remove_custom_covers(path)

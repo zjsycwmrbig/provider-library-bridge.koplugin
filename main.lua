@@ -182,8 +182,8 @@ function ProviderLibraryBridge:runSync(silent)
 
     settings:set("last_sync", report.finished_at)
     settings:set("last_status", string.format(
-        "created=%d updated=%d unchanged=%d failed=%d",
-        report.created, report.updated, report.unchanged, report.failed
+        "created=%d updated=%d unchanged=%d removed=%d failed=%d",
+        report.created, report.updated, report.unchanged, report.removed, report.failed
     ))
     settings:flush()
 
@@ -195,8 +195,8 @@ function ProviderLibraryBridge:runSync(silent)
     if not silent or report.failed > 0 then
         UIManager:show(BottomMessage:new{
             text = string.format(
-                _("同步完成\n新建 %d，更新 %d，未变化 %d，失败 %d"),
-                report.created, report.updated, report.unchanged, report.failed
+                _("同步完成\n新建 %d，更新 %d，未变化 %d，移除 %d，失败 %d"),
+                report.created, report.updated, report.unchanged, report.removed, report.failed
             ),
             timeout = 4,
             show_icon = false,

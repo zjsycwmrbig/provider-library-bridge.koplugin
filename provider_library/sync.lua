@@ -31,11 +31,51 @@ local function provider_plugin(ui, plugin_loader, provider)
     end
 end
 
+-- Membership is separate from the chosen download filter: narrowing the sync
+-- scope must not delete books still on the source shelf.
+local function remove_departed(settings, provider_id, snapshot, index, report, current_document)
+    if type(snapshot) ~= "table" or type(snapshot.library_members) ~= "table"
+        or type(snapshot.endpoint_scope) ~= "string" then return end
+    local candidates = {}
+    for book_id, entry in pairs(settings:all_placeholders()[provider_id] or {}) do
+        candidates[tostring(book_id)] = { entry.path }
+    end
+    for book_id, entries in pairs(index[provider_id] or {}) do
+        local paths = candidates[tostring(book_id)] or {}
+        candidates[tostring(book_id)] = paths
+        for _, entry in ipairs(entries) do paths[#paths + 1] = entry.path end
+    end
+    for book_id, paths in pairs(candidates) do
+        if not snapshot.library_members[book_id] then
+            local seen, retained = {}, false
+            for _, path in ipairs(paths) do
+                if not seen[path] and U.file_exists(path) then
+                    seen[path] = true
+                    if path ~= current_document and Placeholder.is_owned(path, provider_id, book_id)
+                        and Placeholder.matches_endpoint(path, snapshot.endpoint_scope) then
+                        local ok, removed = pcall(Placeholder.remove, path, true)
+                        if ok and removed then
+                            report.removed = report.removed + 1
+                        else
+                            retained = true
+                            report.failed = report.failed + 1
+                        end
+                    else
+                        retained = true
+                    end
+                end
+            end
+            if not retained then settings:remove_placeholder(provider_id, book_id) end
+        end
+    end
+end
+
 function Sync.run(context)
     local report = {
         created = 0,
         updated = 0,
         unchanged = 0,
+        removed = 0,
         failed = 0,
         started_at = os.time(),
     }
@@ -62,7 +102,7 @@ function Sync.run(context)
             context.ui, context.plugin_loader, provider
         ) or nil
         if plugin then
-            local ok, records = pcall(provider.scan, provider, plugin, {
+            local ok, records, snapshot = pcall(provider.scan, provider, plugin, {
                 scope = scope,
                 allow_network = context.allow_network == true,
                 settings = context.settings,
@@ -97,6 +137,10 @@ function Sync.run(context)
                         )
                         report.failed = report.failed + 1
                     end
+                end
+                if index_ok then
+                    remove_departed(context.settings, provider.id, snapshot, placeholder_index, report,
+                        context.ui and context.ui.document and context.ui.document.file)
                 end
             end
         end
