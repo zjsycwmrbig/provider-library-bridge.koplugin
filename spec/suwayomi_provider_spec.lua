@@ -120,10 +120,11 @@ end
 package.path = "./?.lua;" .. package.path
 local Provider = require("provider_library.providers.suwayomi")
 
-local opened
+local opened, opened_options
 local plugin = {
-    showChaptersForManga = function(_, manga)
+    showChaptersForManga = function(_, manga, options)
         opened = manga
+        opened_options = options
         return true
     end,
 }
@@ -141,6 +142,8 @@ assert(known[1].last_read_title == "第02话")
 assert(known[1].cache_path == folder)
 assert(known[1].cache_bytes == 4096)
 assert(known[1].book.cache_dir == folder)
+assert(known[1].first_unread_chapter_id == 2)
+assert(tostring(known[1].book.first_unread_chapter.id) == "2")
 assert(tostring(known[1].book.id) == "10")
 assert(known[1].book.endpoint_scope == "http://suwayomi.test")
 
@@ -157,8 +160,42 @@ local cached = Provider:scan(plugin, {
 assert(#cached == 1)
 assert(cached[1].book_id == "10")
 
-assert(Provider:open(plugin, known[1].book))
+local stale_book = {
+    id = 10,
+    book_id = "10",
+    endpoint_scope = "http://suwayomi.test",
+    cache_dir = folder,
+}
+local prepared = Provider:prepare(plugin, stale_book)
+assert(tostring(prepared.first_unread_chapter.id) == "2")
+assert(prepared.progress == 0.4)
+
+assert(Provider:open(plugin, prepared))
 assert(tostring(opened.id) == "10")
+assert(tostring(opened_options.return_context.chapter_id) == "2")
+assert(opened_options.return_context.chapter_name == "第02话")
+
+data.library_cache.manga[1].first_unread_chapter = {
+    id = 4,
+    name = "第04话",
+}
+local explicitly_prepared = Provider:prepare(plugin, stale_book)
+assert(tostring(explicitly_prepared.first_unread_chapter.id) == "4")
+
+data.library_cache.manga[2].unread_count = 0
+for _, chapter in ipairs(data.chapter_cache.mangas["20"].chapters) do
+    chapter.is_read = true
+end
+local all_read = Provider:prepare(plugin, {
+    id = 20,
+    book_id = "20",
+    endpoint_scope = "http://suwayomi.test",
+})
+assert(all_read.first_unread_chapter == nil)
+opened_options = nil
+assert(Provider:open(plugin, all_read))
+assert(opened_options == nil)
+
 assert(Provider:display_title("Ura Baito: Toubou Kinshi")
     == "Ura Baito: Toubou Kinshi")
 assert(Provider:display_title("灰色兼职：逃亡禁止") == "灰色兼职：逃亡禁止")

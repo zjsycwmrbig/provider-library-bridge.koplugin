@@ -18,7 +18,7 @@ plugins in KOReader's local library, with covers and provider badges.
 插件不会修改番茄小说或微信读书插件。点击占位书时，本插件通过各来源插件已有的
 实例接口打开对应书。
 
-当前为 **v0.7.0 公开预览版**。已完成 Kindle 安装、文件校验、Lua 测试及三款
+当前为 **v0.7.1 公开预览版**。已完成 Kindle 安装、文件校验、Lua 测试及三款
 默认封面的实机引擎渲染验证；重启后的完整书架显示、标签位置和点击跳转仍需进一步验证。
 
 ## 安装与升级
@@ -75,6 +75,7 @@ GitHub 自动生成的 Source code ZIP 会包含仓库外层目录，建议使�
 - 可同步来源插件已知书架中的全部书，也可切换为只同步已缓存书籍；
 - 可扫描来源插件，并逐个勾选参与同步的 Provider；
 - Suwayomi 以漫画为单位生成一本占位书，而不是为每个章节生成一本；
+- Suwayomi 占位书从书架或历史记录打开时，章节列表直接定位到第一个未读章节；
 - 为缓存和未缓存书生成很小的 HTML 占位书；
 - 把来源标签保存在占位书 sidecar 中，不污染书名和封面；
 - 将来源名称写入 KOReader 的系列和关键词元数据；
@@ -151,6 +152,11 @@ Suwayomi 没有本地章节的 Library 漫画也会显示；`仅已缓存` 只�
 本地 CBZ 的漫画。打开占位书会进入 Suwayomi 章节列表，后续下载、阅读和同步继续
 由 Suwayomi 插件管理。
 
+Suwayomi Provider 不直接重新请求服务器书架。它读取 Suwayomi 插件已保存的
+`library_cache`、`chapter_cache`、`chapter_ledger` 和阅读返回上下文，再与
+`/mnt/us/Books` 中的占位书 sidecar 合并；联网时只额外尝试补取缺失封面。来源书架
+本身仍需先在 Suwayomi 插件中刷新。
+
 ## 文件夹与路径
 
 同步前会递归扫描目标书库中的 HTML 占位书，并读取对应的
@@ -199,7 +205,8 @@ Suwayomi 显示标题保留来源书名中的冒号等标点；其他来源继�
 3. 本插件读取 `.sdr` 中的 Provider 标记；
 4. 保留占位书历史，并把来源章节历史归并到对应占位书；
 5. 调用对应来源插件的打开方法；
-6. 阅读进度和章节同步仍由来源插件管理；Suwayomi 会进入对应漫画的章节列表。
+6. 阅读进度和章节同步仍由来源插件管理；Suwayomi 会进入对应漫画的章节列表，并
+   定位到当前快照中的第一个未读章节。
 
 来源插件未启用或接口发生变化时，占位书会保留，并显示错误提示。
 
@@ -274,7 +281,7 @@ Kindle 上本插件的数据位置：
 
 - [开发与测试](docs/DEVELOPMENT.md)
 - [贡献指南](CONTRIBUTING.md)
-- [v0.7.0 发布说明](docs/releases/v0.7.0.md)
+- [v0.7.1 发布说明](docs/releases/v0.7.1.md)
 - 代码和原创 SVG： [AGPL-3.0](LICENSE)
 - 内置字体：SIL OFL 1.1，见 [第三方声明](THIRD_PARTY_NOTICES.md)
 

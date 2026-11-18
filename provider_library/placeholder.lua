@@ -377,6 +377,7 @@ function Placeholder.upsert(
         total_count = record.total_count,
         progress_percent = record.progress_percent,
         last_read_title = record.last_read_title,
+        first_unread_chapter_id = record.first_unread_chapter_id,
         read_timestamp = record.read_timestamp,
         cache_bytes = record.cache_bytes,
         cover_url = record.cover_url,

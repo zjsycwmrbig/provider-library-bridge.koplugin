@@ -31,6 +31,70 @@ local function merge_manga(target, source)
     return target
 end
 
+local function chapter_identity(chapter)
+    if type(chapter) ~= "table" then
+        return nil
+    end
+    local chapter_id = chapter.id or chapter.chapter_id
+    local name = chapter.name or chapter.chapter_name
+    if (chapter_id == nil or tostring(chapter_id) == "")
+        and (name == nil or tostring(name) == "")
+    then
+        return nil
+    end
+    return chapter_id, name
+end
+
+local function chapter_before(left, right, left_id, right_id)
+    local left_order = tonumber(left and left.source_order)
+        or tonumber(left and left.chapter_number)
+        or math.huge
+    local right_order = tonumber(right and right.source_order)
+        or tonumber(right and right.chapter_number)
+        or math.huge
+    if left_order ~= right_order then
+        return left_order < right_order
+    end
+    local left_number, right_number = tonumber(left_id), tonumber(right_id)
+    if left_number and right_number and left_number ~= right_number then
+        return left_number < right_number
+    end
+    return tostring(left_id) < tostring(right_id)
+end
+
+local function first_unread_chapter(manga, chapters)
+    manga = type(manga) == "table" and manga or {}
+    local explicit = manga.first_unread_chapter
+    local explicit_id, explicit_name = chapter_identity(explicit)
+    if explicit_id ~= nil or explicit_name ~= nil then
+        if type(chapters) == "table" and explicit_id ~= nil then
+            for _, chapter in ipairs(chapters) do
+                local chapter_id, chapter_name = chapter_identity(chapter)
+                if chapter_id ~= nil and tostring(chapter_id) == tostring(explicit_id) then
+                    return chapter, chapter_id, chapter_name
+                end
+            end
+        end
+        return explicit, explicit_id, explicit_name
+    end
+    if tonumber(manga.unread_count) == 0 or type(chapters) ~= "table" then
+        return nil
+    end
+    local selected, selected_id, selected_name
+    for _, chapter in ipairs(chapters) do
+        local chapter_id, chapter_name = chapter_identity(chapter)
+        if chapter_id ~= nil or chapter_name ~= nil then
+            if chapter.is_read ~= true
+                and (not selected
+                    or chapter_before(chapter, selected, chapter_id, selected_id))
+            then
+                selected, selected_id, selected_name = chapter, chapter_id, chapter_name
+            end
+        end
+    end
+    return selected, selected_id, selected_name
+end
+
 local function load_settings()
     local path = DataStorage:getSettingsDir() .. "/suwayomi.lua"
     return U.load_lua(path) or {}
@@ -245,6 +309,7 @@ local function build_record(provider, manga, chapters, downloaded, options)
     end
     local latest = latest_download(downloaded)
     local _, total_count, ratio = chapter_progress(chapters, manga)
+    local focus_chapter, focus_id = first_unread_chapter(manga, chapters)
 
     local book = copy_scalar_fields({
         id = manga.id,
@@ -254,6 +319,7 @@ local function build_record(provider, manga, chapters, downloaded, options)
     book.id = manga.id
     book.endpoint_scope = manga.endpoint_scope
     book.cache_dir = folder
+    book.first_unread_chapter = focus_chapter
 
     return {
         provider_id = provider.id,
@@ -266,6 +332,7 @@ local function build_record(provider, manga, chapters, downloaded, options)
         progress_percent = U.progress_percent(ratio),
         progress_source = "chapters",
         last_read_title = latest and latest.chapter_name or "",
+        first_unread_chapter_id = focus_id,
         cache_path = folder,
         cache_bytes = folder and U.directory_size(folder) or 0,
         cover_path = local_cover(provider, manga, options),
@@ -338,13 +405,77 @@ function Provider:scan(plugin, options)
     return records
 end
 
+function Provider:prepare(_plugin, book)
+    if type(book) ~= "table" then
+        return book
+    end
+    local book_id = book.book_id or book.id
+    if book_id == nil or tostring(book_id) == "" then
+        return book
+    end
+    local data = load_settings()
+    local endpoint_scope = book.endpoint_scope
+        or (data.library_cache and data.library_cache.endpoint_scope)
+    local cache_matches = not endpoint_scope
+        or not (data.library_cache and data.library_cache.endpoint_scope)
+        or data.library_cache.endpoint_scope == endpoint_scope
+    local latest
+    if cache_matches then
+        for _, manga in ipairs(
+            (data.library_cache and data.library_cache.manga) or {}
+        ) do
+            if tostring(manga.id) == tostring(book_id)
+                and (not endpoint_scope or not manga.endpoint_scope
+                    or manga.endpoint_scope == endpoint_scope)
+            then
+                latest = manga
+                break
+            end
+        end
+    end
+    local chapter_cache_scope = data.chapter_cache
+        and data.chapter_cache.endpoint_scope
+    local chapter_cache_matches = not endpoint_scope or not chapter_cache_scope
+        or chapter_cache_scope == endpoint_scope
+    local listing = cache_matches and chapter_cache_matches
+        and data.chapter_cache
+        and data.chapter_cache.mangas
+        and data.chapter_cache.mangas[tostring(book_id)]
+    local chapters = type(listing) == "table" and listing.chapters or nil
+    local prepared = merge_manga({}, book)
+    merge_manga(prepared, latest)
+    if type(listing) == "table" then
+        merge_manga(prepared, listing.manga)
+    end
+    prepared.endpoint_scope = prepared.endpoint_scope or endpoint_scope
+    prepared.cache_dir = book.cache_dir or prepared.cache_dir
+    local focus = first_unread_chapter(prepared, chapters)
+    prepared.first_unread_chapter = focus
+    local _, total_count, ratio = chapter_progress(chapters or {}, prepared)
+    if total_count > 0 then
+        prepared.progress = ratio
+    end
+    return prepared
+end
+
 function Provider:open(plugin, book)
     if not plugin
         or type(plugin.showChaptersForManga) ~= "function" then
         return false, "Suwayomi 插件未启用或章节接口不可用"
     end
+    local focus = type(book) == "table" and book.first_unread_chapter or nil
+    local focus_id, focus_name = chapter_identity(focus)
+    local options
+    if focus_id ~= nil or focus_name ~= nil then
+        options = {
+            return_context = {
+                chapter_id = focus_id,
+                chapter_name = focus_name,
+            },
+        }
+    end
     local ok, opened = pcall(
-        plugin.showChaptersForManga, plugin, book
+        plugin.showChaptersForManga, plugin, book, options
     )
     if not ok then
         return false, opened
