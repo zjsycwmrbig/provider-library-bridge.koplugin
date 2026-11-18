@@ -179,8 +179,14 @@ data.library_cache.manga[1].first_unread_chapter = {
     id = 4,
     name = "第04话",
 }
-local explicitly_prepared = Provider:prepare(plugin, stale_book)
-assert(tostring(explicitly_prepared.first_unread_chapter.id) == "4")
+local cache_prepared = Provider:prepare(plugin, stale_book)
+assert(tostring(cache_prepared.first_unread_chapter.id) == "2")
+
+local chapter_listing = data.chapter_cache.mangas["10"]
+data.chapter_cache.mangas["10"] = nil
+local explicit_only = Provider:prepare(plugin, stale_book)
+assert(tostring(explicit_only.first_unread_chapter.id) == "4")
+data.chapter_cache.mangas["10"] = chapter_listing
 
 data.library_cache.manga[2].unread_count = 0
 for _, chapter in ipairs(data.chapter_cache.mangas["20"].chapters) do

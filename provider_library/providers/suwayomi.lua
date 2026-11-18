@@ -66,33 +66,29 @@ local function first_unread_chapter(manga, chapters)
     manga = type(manga) == "table" and manga or {}
     local explicit = manga.first_unread_chapter
     local explicit_id, explicit_name = chapter_identity(explicit)
-    if explicit_id ~= nil or explicit_name ~= nil then
-        if type(chapters) == "table" and explicit_id ~= nil then
-            for _, chapter in ipairs(chapters) do
-                local chapter_id, chapter_name = chapter_identity(chapter)
-                if chapter_id ~= nil and tostring(chapter_id) == tostring(explicit_id) then
-                    return chapter, chapter_id, chapter_name
+    local has_read_state = false
+    local selected, selected_id, selected_name
+    if type(chapters) == "table" then
+        for _, chapter in ipairs(chapters) do
+            if type(chapter.is_read) == "boolean" then has_read_state = true end
+            local chapter_id, chapter_name = chapter_identity(chapter)
+            if chapter_id ~= nil or chapter_name ~= nil then
+                if chapter.is_read ~= true
+                    and (not selected
+                        or chapter_before(chapter, selected, chapter_id, selected_id))
+                then
+                    selected, selected_id, selected_name = chapter, chapter_id, chapter_name
                 end
             end
         end
+    end
+    if has_read_state then
+        return selected, selected_id, selected_name
+    end
+    if explicit_id ~= nil or explicit_name ~= nil then
         return explicit, explicit_id, explicit_name
     end
-    if tonumber(manga.unread_count) == 0 or type(chapters) ~= "table" then
-        return nil
-    end
-    local selected, selected_id, selected_name
-    for _, chapter in ipairs(chapters) do
-        local chapter_id, chapter_name = chapter_identity(chapter)
-        if chapter_id ~= nil or chapter_name ~= nil then
-            if chapter.is_read ~= true
-                and (not selected
-                    or chapter_before(chapter, selected, chapter_id, selected_id))
-            then
-                selected, selected_id, selected_name = chapter, chapter_id, chapter_name
-            end
-        end
-    end
-    return selected, selected_id, selected_name
+    return nil
 end
 
 local function load_settings()

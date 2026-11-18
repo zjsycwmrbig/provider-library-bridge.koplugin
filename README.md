@@ -18,7 +18,7 @@ plugins in KOReader's local library, with covers and provider badges.
 插件不会修改番茄小说或微信读书插件。点击占位书时，本插件通过各来源插件已有的
 实例接口打开对应书。
 
-当前为 **v0.7.1 公开预览版**。已完成 Kindle 安装、文件校验、Lua 测试及三款
+当前为 **v0.7.2 公开预览版**。已完成 Kindle 安装、文件校验、Lua 测试及三款
 默认封面的实机引擎渲染验证；重启后的完整书架显示、标签位置和点击跳转仍需进一步验证。
 
 ## 安装与升级
@@ -281,7 +281,7 @@ Kindle 上本插件的数据位置：
 
 - [开发与测试](docs/DEVELOPMENT.md)
 - [贡献指南](CONTRIBUTING.md)
-- [v0.7.1 发布说明](docs/releases/v0.7.1.md)
+- [v0.7.2 发布说明](docs/releases/v0.7.2.md)
 - 代码和原创 SVG： [AGPL-3.0](LICENSE)
 - 内置字体：SIL OFL 1.1，见 [第三方声明](THIRD_PARTY_NOTICES.md)
 
